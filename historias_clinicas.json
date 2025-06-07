@@ -1,0 +1,23 @@
+[
+    {
+        "nombre": "Nicolas Fernandez",
+        "dni": "37863139",
+        "fecha_nacimiento": "1993-10-13",
+        "fecha_consulta": "2025-06-06",
+        "diagnostico": "ya no esta loco",
+        "tratamiento": "no hay cura",
+        "observaciones": "pero debe tomar pastillas durante diez a\u00f1os",
+        "medico": "Fran Colom",
+        "id": 1
+    },
+    {
+        "nombre": "julieta colom",
+        "dni": "40022695",
+        "fecha_nacimiento": "1996-11-04",
+        "fecha_consulta": "2025-06-06",
+        "diagnostico": "enanismo",
+        "tratamiento": "no hay",
+        "observaciones": "esta loca, hay que seguirle la corriente",
+        "medico": "Marianela Bobbiesi"
+    }
+]
