@@ -100,7 +100,9 @@
       const apellidoFiltro = document.getElementById("filtro-apellido").value.trim().toLowerCase();
       const semanaFiltro = document.getElementById("filtro-semana").value;
 
-      const turnos = await fetch('/api/turnos/medico').then(r => r.json());
+      // Secretaria puede ver todos los turnos, médico solo los suyos
+      const endpoint = rolUsuario === 'secretaria' ? '/api/turnos' : '/api/turnos/medico';
+      const turnos = await fetch(endpoint).then(r => r.json());
 
       const estados = {
         "sin atender": document.getElementById("sin-atender"),
@@ -135,6 +137,11 @@
                 <button onclick='actualizarEstado(${JSON.stringify(t)}, "atendido")' class="bg-success text-white px-3 py-1 rounded hover:bg-green-600">Atendido</button>
                 <button onclick='actualizarEstado(${JSON.stringify(t)}, "ausente")' class="bg-danger text-white px-3 py-1 rounded hover:bg-red-600">Ausente</button>
               </div>` : ""}
+            ${rolUsuario === 'secretaria' ? `
+              <div class="mt-3 space-x-2">
+                <button onclick='editarTurnoSecretaria(${JSON.stringify(t)})' class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Editar</button>
+                <button onclick='eliminarTurnoSecretaria(${JSON.stringify(t)})' class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Eliminar</button>
+              </div>` : ""}
           `;
           estados[estado]?.appendChild(div);
         });
@@ -163,6 +170,61 @@
       const fechaSeleccionada = document.getElementById("filtro-fecha").value;
       if (!fechaSeleccionada) return;
       cargarTurnos(t => t.fecha === fechaSeleccionada);
+    }
+
+    async function editarTurnoSecretaria(turno) {
+      const nuevaHora = prompt('Ingrese la nueva hora (HH:MM):', turno.hora);
+      if (nuevaHora && nuevaHora !== turno.hora) {
+        try {
+          const response = await fetch(`/api/turnos/${turno.dni_paciente}/${turno.fecha}/${turno.hora}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              nueva_hora: nuevaHora
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok) {
+            alert('Turno actualizado correctamente');
+            iniciarPagina(); // Recargar los datos
+          } else {
+            alert('Error: ' + result.error);
+          }
+        } catch (error) {
+          alert('Error al actualizar el turno: ' + error.message);
+        }
+      }
+    }
+    
+    async function eliminarTurnoSecretaria(turno) {
+      const paciente = pacientes.find(p => p.dni === turno.dni_paciente) || {};
+      const nombrePaciente = `${paciente.nombre || ''} ${paciente.apellido || ''}`.trim();
+      
+      if (confirm(`¿Está seguro de que desea eliminar el turno de ${nombrePaciente || 'DNI: ' + turno.dni_paciente} el ${turno.fecha} a las ${turno.hora}?`)) {
+        try {
+          const response = await fetch(`/api/turnos/${turno.dni_paciente}/${turno.fecha}/${turno.hora}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok) {
+            alert('Turno eliminado correctamente');
+            iniciarPagina(); // Recargar los datos
+          } else {
+            alert('Error: ' + result.error);
+          }
+        } catch (error) {
+          alert('Error al eliminar el turno: ' + error.message);
+        }
+      }
     }
 
     async function iniciarPagina() {
