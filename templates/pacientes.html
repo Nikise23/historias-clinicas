@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Pacientes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#06B6D4',
+            success: '#10B981',
+            danger: '#EF4444',
+            warning: '#F59E0B'
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-gray-100 text-gray-800 p-6">
+  <h1 class="text-3xl font-bold text-center text-primary mb-6">Gestión de Pacientes</h1>
+
+  <div class="grid md:grid-cols-2 gap-6">
+    <!-- Formulario de registro / modificación -->
+    <div class="bg-white shadow rounded-lg p-4">
+      <h2 class="text-xl font-semibold mb-4" id="form-title">Registrar Paciente</h2>
+      <form id="form-paciente">
+        <input type="text" id="nombre" placeholder="Nombre" class="input" required>
+        <input type="text" id="apellido" placeholder="Apellido" class="input" required>
+        <input type="text" id="dni" placeholder="DNI" class="input" required>
+        <input type="text" id="obra_social" placeholder="Obra Social" class="input" required>
+        <input type="text" id="numero_obra_social" placeholder="N° Obra Social" class="input" required>
+        <input type="text" id="celular" placeholder="Celular" class="input" required>
+
+        <div class="flex gap-2 mt-4">
+          <button type="submit" class="bg-primary text-white px-4 py-2 rounded">Guardar</button>
+          <button type="button" onclick="limpiarFormulario()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded">Cancelar</button>
+        </div>
+      </form>
+      <p id="mensaje" class="text-sm text-success mt-2"></p>
+    </div>
+
+    <!-- Listado de pacientes -->
+    <div class="bg-white shadow rounded-lg p-4">
+      <div class="flex flex-col md:flex-row items-center justify-between mb-4 gap-2">
+        <input type="text" id="buscar" placeholder="Buscar por DNI o Apellido" class="border border-gray-300 rounded p-2 w-full md:w-2/3" />
+        <button onclick="cargarPacientes()" class="bg-primary text-white px-4 py-2 rounded w-full md:w-auto">Buscar</button>
+      </div>
+      <div id="lista-pacientes" class="space-y-3 max-h-[400px] overflow-auto"></div>
+    </div>
+  </div>
+
+  <a href="/" class="mt-10 block text-center text-primary font-semibold hover:underline">← Volver al inicio</a>
+
+  <script>
+    async function cargarPacientes() {
+      const filtro = document.getElementById("buscar").value.trim().toLowerCase();
+      const lista = document.getElementById("lista-pacientes");
+      lista.innerHTML = "";
+
+      const pacientes = await fetch("/api/pacientes").then(r => r.json());
+
+      pacientes
+        .filter(p =>
+          !filtro ||
+          p.dni.includes(filtro) ||
+          p.apellido.toLowerCase().includes(filtro)
+        )
+        .forEach(p => {
+          const div = document.createElement("div");
+          div.className = "border border-gray-200 p-3 rounded bg-gray-50 shadow-sm";
+          div.innerHTML = `
+            <p class="font-semibold">${p.nombre} ${p.apellido}</p>
+            <p class="text-sm">DNI: ${p.dni} | Obra Social: ${p.obra_social}</p>
+            <button onclick='editarPaciente(${JSON.stringify(p)})' class="mt-2 text-sm text-primary hover:underline">Editar</button>
+          `;
+          lista.appendChild(div);
+        });
+    }
+
+    function editarPaciente(p) {
+      document.getElementById("form-title").innerText = "Modificar Paciente";
+      document.getElementById("dni").value = p.dni;
+      document.getElementById("dni").readOnly = true;
+      document.getElementById("nombre").value = p.nombre;
+      document.getElementById("apellido").value = p.apellido;
+      document.getElementById("obra_social").value = p.obra_social;
+      document.getElementById("numero_obra_social").value = p.numero_obra_social;
+      document.getElementById("celular").value = p.celular;
+    }
+
+    function limpiarFormulario() {
+      document.getElementById("form-title").innerText = "Registrar Paciente";
+      document.getElementById("form-paciente").reset();
+      document.getElementById("dni").readOnly = false;
+      document.getElementById("mensaje").innerText = "";
+    }
+
+    document.getElementById("form-paciente").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const datos = {
+        dni: document.getElementById("dni").value.trim(),
+        nombre: document.getElementById("nombre").value.trim(),
+        apellido: document.getElementById("apellido").value.trim(),
+        obra_social: document.getElementById("obra_social").value.trim(),
+        numero_obra_social: document.getElementById("numero_obra_social").value.trim(),
+        celular: document.getElementById("celular").value.trim(),
+      };
+
+      const metodo = document.getElementById("dni").readOnly ? "PUT" : "POST";
+      const url = metodo === "PUT" ? `/api/pacientes/${datos.dni}` : "/api/pacientes";
+
+      const respuesta = await fetch(url, {
+        method: metodo,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos),
+      });
+
+      const resultado = await respuesta.json();
+      const mensaje = document.getElementById("mensaje");
+      if (respuesta.ok) {
+        mensaje.innerText = resultado.mensaje;
+        mensaje.classList.remove("text-danger");
+        mensaje.classList.add("text-success");
+        cargarPacientes();
+        limpiarFormulario();
+      } else {
+        mensaje.innerText = resultado.error || "Error";
+        mensaje.classList.remove("text-success");
+        mensaje.classList.add("text-danger");
+      }
+    });
+
+    cargarPacientes();
+  </script>
+
+  <style>
+    .input {
+      display: block;
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 0.375rem;
+    }
+  </style>
+</body>
+</html>

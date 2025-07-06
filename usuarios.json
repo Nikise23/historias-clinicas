@@ -1,14 +1,22 @@
 [
-  {
-    "usuario": "francisco",
-    "contrasena": "medico123"
-  },
-  {
-    "usuario": "marianela",
-    "contrasena": "medico1234"
-  },
-  {
-    "usuario": "juan",
-    "contrasena": "medico12345"
-  }
+    {
+        "usuario": "Marianela Bobbiesi",
+        "contrasena": "scrypt:32768:8:1$wAF4AIMxtW75Y7ho$f6928ae4e64b426779bd3231d247231ab5f683e4f1d5f9778810aa815e5dd0c7068bdaf0c1e8399bf0fb7c98de0e0a491d1c8965d3143684dcb77e0cc893cf77",
+        "rol": "medico"
+    },
+    {
+        "usuario": "Agustina",
+        "contrasena": "scrypt:32768:8:1$qyOtmItMo39qOpDg$f37f6fbe66c3373694c5fb873b5bef183b55cd407d19116cbf654a2bb106a8fa02e9784c787f0f6e1ea5066d80f4f2afde46b2b2a560fa6f25c39b40a7841182",
+        "rol": "secretaria"
+    },
+    {
+        "usuario": "Francisco Colom",
+        "contrasena": "scrypt:32768:8:1$MTwKi7QXT19emYkg$45ef2ace03d00f06649ccdd46a8267b2b9f2220114a7c7141957c33938e8a2780be875814371f588b5089f773abd72378e7dcacfc868ec5714fb6001f2851096",
+        "rol": "medico"
+    },
+    {
+        "usuario": "Juan Julian",
+        "contrasena": "scrypt:32768:8:1$8fazmq7SXU9t2jhb$75eb03e02349126f2d1af330edcff517d0a69c766f30fcaa93216346fe27f7cfbf683975f9c116886fc9823a9355f78e97714037f60271da0842e42996d98269",
+        "rol": "medico"
+    }
 ]

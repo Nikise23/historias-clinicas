@@ -1,158 +1,246 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Gestión de Historias Clínicas</title>
+  <meta charset="UTF-8" />
+  <title>Panel Principal ‑ Clínica</title>
+
+  <!-- Bootstrap & Icons -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
   <style>
-    body { font-family: Arial; margin: 30px; background: #f2f2f2; }
-    input, textarea, button { width: 100%; margin-bottom: 10px; padding: 8px; }
-    .historia { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; background: white; }
-    .boton { margin-right: 5px; }
+    body{
+      background:#f4f6f9;
+      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+      padding:20px;min-height:100vh;display:flex;flex-direction:column
+    }
+    h1,h3,h4{color:#2c3e50}
+    .card-panel{background:#fff;border-radius:16px;box-shadow:0 6px 12px rgb(0 0 0 / .05);padding:25px;margin-bottom:30px}
+    #logout-btn{background:#dc3545;color:#fff;font-weight:600;transition:.3s}
+    #logout-btn:hover{background:#bb2d3b}
+    #info-usuario{font-weight:600;color:#2c3e50;margin-left:auto;white-space:nowrap}
+    .btn-action{width:100%;text-align:left;font-weight:600;font-size:1rem;padding:15px 20px;border-radius:12px;transition:.3s}
+    .btn-action i{margin-right:12px;font-size:1.25rem}
+    .btn-outline-primary.btn-action:hover{background:#0d6efd;color:#fff!important}
+    .btn-outline-success.btn-action:hover{background:#198754;color:#fff!important}
+    .btn-outline-info.btn-action:hover{background:#0dcaf0;color:#fff!important}
+    @media(max-width:600px){
+      #logout-btn,#info-usuario{float:none;width:100%;text-align:center;margin-bottom:10px}
+    }
+    /* Resumen */
+    #resumen-medico ul{max-width:400px;margin:0 auto}
+    #resumen-medico li{font-size:1.05rem;font-weight:600}
+    /* Tarjetas de historias */
+    #resultado .card-panel{border-radius:12px;box-shadow:0 3px 8px rgb(0 0 0 /.08);padding:18px;margin-bottom:18px;transition:.2s}
+    #resultado .card-panel:hover{box-shadow:0 6px 16px rgb(0 0 0 /.15)}
   </style>
 </head>
 <body>
-  <h1>Gestión de Historias Clínicas</h1>
+  <!-- Encabezado -->
+  <div class="d-flex flex-wrap align-items-center mb-4 gap-3">
+    <h1>Bienvenido/a <span id="info-usuario"></span></h1>
+    <button id="logout-btn" class="btn btn-sm ms-auto"
+            onclick="location.href='/logout'">
+      <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+    </button>
+  </div>
 
-  <h2 id="form-titulo">Crear Historia Clínica</h2>
-  <form id="formulario">
-    <input type="text" id="nombre" placeholder="Nombre completo" required>
-    <input type="text" id="dni" placeholder="DNI" required>
-    <input type="date" id="fecha_nacimiento" placeholder="Fecha de nacimiento">
-    <input type="date" id="fecha_consulta" placeholder="Fecha de consulta">
-    <input type="text" id="diagnostico" placeholder="Diagnóstico" required>
-    <input type="text" id="tratamiento" placeholder="Tratamiento">
-    <textarea id="observaciones" placeholder="Observaciones"></textarea>
-    <input type="text" id="medico" placeholder="Médico" required>
-    <button type="submit" id="btn-guardar">Guardar</button>
-  </form>
+  <!-- Acciones -->
+  <div class="card-panel" id="contenedor-botones">
+    <!-- Secretaria -->
+    <div id="botones-secretaria"
+         class="row row-cols-1 row-cols-md-2 g-3" style="display:none">
+      <div class="col">
+        <a href="/agenda" class="btn btn-outline-primary btn-action">
+          <i class="bi bi-calendar-week"></i> Administrar Agenda
+        </a>
+      </div>
+      <div class="col">
+        <a href="/pacientes" class="btn btn-outline-success btn-action">
+          <i class="bi bi-person-plus"></i> Registrar Pacientes
+        </a>
+      </div>
+    </div>
+    <!-- Médico -->
+    <div id="botones-medico"
+         class="row row-cols-1 row-cols-md-2 g-3" style="display:none">
+      <div class="col">
+        <a href="/turnos" class="btn btn-outline-info btn-action">
+          <i class="bi bi-clipboard-check"></i> Turnos Asignados
+        </a>
+      </div>
+      <div class="col">
+        <a href="/agenda" class="btn btn-outline-primary btn-action">
+          <i class="bi bi-calendar-week"></i> Administrar Agenda
+        </a>
+      </div>
+    </div>
+  </div>
 
-  <h3>Buscar por DNI</h3>
-  <input type="text" id="dni_buscar" placeholder="Ingrese DNI">
-  <button onclick="buscarHistoria()">Buscar</button>
+  <!-- Resumen y tabla (solo médico) -->
+  <div class="card-panel" id="resumen-medico" style="display:none">
+    <h4>Resumen del día</h4>
+    <ul class="list-group mb-4">
+      <li class="list-group-item d-flex justify-content-between">
+        Turnos pendientes
+        <span class="badge bg-warning text-dark fs-6" id="turnos-pendientes">0</span>
+      </li>
+      <li class="list-group-item d-flex justify-content-between">
+        Pacientes atendidos
+        <span class="badge bg-success fs-6" id="pacientes-atendidos">0</span>
+      </li>
+    </ul>
 
-  <h3>Ver Todas</h3>
-  <button onclick="cargarHistorias()">Cargar Historias</button>
+    <!-- Tabla detalle -->
+    <div id="tabla-turnos" style="display:none">
+      <h5 class="mb-3">Detalle de turnos de hoy</h5>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Fecha</th><th>Hora</th><th>Paciente</th>
+              <th>DNI</th><th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-turnos-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buscador de historias (solo médico) -->
+  <div class="card-panel" id="busqueda-pacientes" style="display:none">
+    <h3>Buscar Historia Clínica</h3>
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <input id="dni_buscar" class="form-control" placeholder="Buscar por DNI">
+      </div>
+      <div class="col-md-6">
+        <input id="apellido_buscar" class="form-control" placeholder="Buscar por Apellido">
+      </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <button class="btn btn-secondary" onclick="buscarPorDNI()">Buscar por DNI</button>
+      <button class="btn btn-secondary" onclick="buscarPorApellido()">Buscar por Apellido</button>
+      <button class="btn btn-secondary" onclick="cargarHistorias()">Cargar todas</button>
+    </div>
+  </div>
+
+  <!-- Resultados de historias -->
   <div id="resultado"></div>
 
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
   <script>
-    let modoEdicion = false;
-    let idEditando = null;
+    /* === Cargar info de sesión === */
+    fetch("/api/session-info")
+      .then(r=>r.json())
+      .then(({usuario,rol})=>{
+        if(!usuario||!rol) return;
+        document.getElementById("info-usuario").textContent=`${usuario} | ${rol.toUpperCase()}`;
 
-    document.getElementById("formulario").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const datos = {
-        nombre: nombre.value.trim(),
-        dni: dni.value.trim(),
-        fecha_nacimiento: fecha_nacimiento.value,
-        fecha_consulta: fecha_consulta.value,
-        diagnostico: diagnostico.value.trim(),
-        tratamiento: tratamiento.value.trim(),
-        observaciones: observaciones.value.trim(),
-        medico: medico.value.trim()
-      };
+        if(rol==="secretaria"){
+          document.getElementById("botones-secretaria").style.display="flex";
+        }else if(rol==="medico"){
+          document.getElementById("botones-medico").style.display="flex";
+          document.getElementById("busqueda-pacientes").style.display="block";
+          document.getElementById("resumen-medico").style.display="block";
+          cargarResumenDelDia();          // <- resumen + tabla
+        }
+      });
 
-      if (!datos.nombre || !datos.dni || !datos.diagnostico || !datos.medico) {
-        alert("Completa los campos obligatorios");
+    /* === Resumen y tabla === */
+    function cargarResumenDelDia(){
+      const hoy=new Date().toISOString().slice(0,10);      // yyyy-mm-dd
+      fetch("/api/turnos/medico")                           // solo turnos del médico
+        .then(r=>r.json())
+        .then(turnos=>{
+          const turnosHoy=turnos.filter(t=>t.fecha===hoy);
+
+          const pendientes=turnosHoy.filter(t=>["sin atender","llamado"].includes(t.estado)).length;
+          const atendidos=turnosHoy.filter(t=>t.estado==="atendido").length;
+
+          document.getElementById("turnos-pendientes").textContent=pendientes;
+          document.getElementById("pacientes-atendidos").textContent=atendidos;
+
+          /* ---- tabla ---- */
+          const tabla=document.getElementById("tabla-turnos");
+          const tbody=document.getElementById("tabla-turnos-body");
+          tbody.innerHTML="";
+          if(turnosHoy.length===0){
+            tabla.style.display="none";
+            return;
+          }
+          turnosHoy
+            .sort((a,b)=> new Date(`${a.fecha} ${a.hora}`)-new Date(`${b.fecha} ${b.hora}`))
+            .forEach(t=>{
+              const tr=document.createElement("tr");
+              tr.innerHTML=`
+                <td>${t.fecha}</td>
+                <td>${t.hora}</td>
+                <td>${t.paciente?.nombre||""} ${t.paciente?.apellido||""}</td>
+                <td>${t.dni_paciente}</td>
+                <td>${t.estado}</td>`;
+              tbody.appendChild(tr);
+            });
+          tabla.style.display="block";
+        })
+        .catch(()=>document.getElementById("tabla-turnos").style.display="none");
+    }
+
+    /* === Historias clínicas === */
+    function mostrarHistorias(lista){
+      const res=document.getElementById("resultado");
+      res.innerHTML="";
+      if(!lista.length){
+        res.innerHTML="<div class='alert alert-warning'>No se encontraron historias clínicas.</div>";
         return;
       }
-
-      const url = modoEdicion ? `/historias/${idEditando}` : "/historias";
-      const metodo = modoEdicion ? "PUT" : "POST";
-
-      fetch(url, {
-        method: metodo,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos)
-      })
-      .then(r => r.json())
-      .then(res => {
-        alert(res.mensaje || res.error);
-        formulario.reset();
-        modoEdicion = false;
-        idEditando = null;
-        document.getElementById("btn-guardar").textContent = "Guardar";
-        document.getElementById("form-titulo").textContent = "Crear Historia Clínica";
-        cargarHistorias();
+      lista.forEach(h=>{
+        const card=document.createElement("div");
+        card.className="card-panel";
+        card.innerHTML=`
+          <strong>${h.nombre}</strong> (DNI ${h.dni})<br>
+          Nac: ${h.fecha_nacimiento||"-"} | Consulta: ${h.fecha_consulta||"-"}<br>
+          <em>Dx:</em> ${h.diagnostico}<br>
+          <em>Tx:</em> ${h.tratamiento||"-"}<br>
+          Obs: ${h.observaciones||"-"}<br>
+          Médico: ${h.medico}`;
+        res.appendChild(card);
       });
-    });
+    }
 
-    function cargarHistorias() {
-  fetch("/historias")
-    .then(r => r.json())
-    .then(data => {
-      resultado.innerHTML = "";
-      data.forEach(h => {
-        const div = document.createElement("div");
-        div.className = "historia";
-        div.innerHTML = `
-          <strong>${h.nombre}</strong> (DNI: ${h.dni})<br>
-          Fecha Nac: ${h.fecha_nacimiento} - Consulta: ${h.fecha_consulta}<br>
-          Diagnóstico: ${h.diagnostico}<br>
-          Tratamiento: ${h.tratamiento}<br>
-          Observaciones: ${h.observaciones}<br>
-          Médico: ${h.medico}<br>
-          <button class="boton" onclick='editarHistoria(${JSON.stringify(h)})'>Modificar</button>
-          <button class="boton" onclick="eliminarHistoria('${h.dni}')">Eliminar</button>
-        `;
-        resultado.appendChild(div);
-      });
-    });
-}
+    function cargarHistorias(){
+      fetch("/api/historias")
+        .then(r=>r.json())
+        .then(mostrarHistorias)
+        .catch(()=>alert("Error al cargar historias"));
+    }
 
-function buscarHistoria() {
-  const dni = dni_buscar.value.trim();
-  if (!dni) return alert("Ingrese un DNI");
+    function buscarPorDNI(){
+      const dni=document.getElementById("dni_buscar").value.trim();
+      if(!dni) return alert("Ingrese un DNI");
+      fetch(`/historias/${dni}`)
+        .then(r=>r.json())
+        .then(h=> h.error ? alert("Historia no encontrada")
+                          : mostrarHistorias([h]));
+    }
 
-  fetch(`/historias/${dni}`)
-    .then(r => {
-      if (!r.ok) throw new Error("Historia no encontrada");
-      return r.json();
-    })
-    .then(h => {
-      resultado.innerHTML = "";
-      const div = document.createElement("div");
-      div.className = "historia";
-      div.innerHTML = `
-        <strong>${h.nombre}</strong> (DNI: ${h.dni})<br>
-        Fecha Nac: ${h.fecha_nacimiento} - Consulta: ${h.fecha_consulta}<br>
-        Diagnóstico: ${h.diagnostico}<br>
-        Tratamiento: ${h.tratamiento}<br>
-        Observaciones: ${h.observaciones}<br>
-        Médico: ${h.medico}<br>
-        <button class="boton" onclick='editarHistoria(${JSON.stringify(h)})'>Modificar</button>
-        <button class="boton" onclick="eliminarHistoria('${h.dni}')">Eliminar</button>
-      `;
-      resultado.appendChild(div);
-    })
-    .catch(() => alert("Historia no encontrada"));
-}
-
-function eliminarHistoria(dni) {
-  if (!confirm("¿Eliminar esta historia?")) return;
-  fetch(`/historias/${dni}`, { method: "DELETE" })
-    .then(r => r.json())
-    .then(res => {
-      alert(res.mensaje || res.error);
-      cargarHistorias();
-    });
-}
-
-function editarHistoria(h) {
-  nombre.value = h.nombre;
-  dni.value = h.dni;
-  fecha_nacimiento.value = h.fecha_nacimiento;
-  fecha_consulta.value = h.fecha_consulta;
-  diagnostico.value = h.diagnostico;
-  tratamiento.value = h.tratamiento;
-  observaciones.value = h.observaciones;
-  medico.value = h.medico;
-  modoEdicion = true;
-  idEditando = h.dni;
-  dni.disabled = true;  // Bloqueamos edición del DNI para evitar problemas
-  document.getElementById("btn-guardar").textContent = "Guardar cambios";
-  document.getElementById("form-titulo").textContent = "Modificar Historia Clínica";
-}
-
+    function buscarPorApellido(){
+      const ape=document.getElementById("apellido_buscar").value.trim().toLowerCase();
+      if(!ape) return alert("Ingrese un apellido");
+      fetch("/historias")
+        .then(r=>r.json())
+        .then(all=>{
+          const filtradas=all.filter(h=>h.nombre.toLowerCase().split(" ").some(p=>p.startsWith(ape)));
+          filtradas.length ? mostrarHistorias(filtradas)
+                           : alert("No se encontraron coincidencias");
+        });
+    }
   </script>
 </body>
 </html>
+

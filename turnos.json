@@ -1,0 +1,71 @@
+[
+    {
+        "medico": "Francisco Colom",
+        "dia": "MIERCOLES",
+        "hora": "14:05",
+        "dni_paciente": "40022695",
+        "estado": "atendido"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "dia": "LUNES",
+        "hora": "14:05",
+        "dni_paciente": "40022695",
+        "estado": "ausente"
+    },
+    {
+        "medico": "Francisco Colom",
+        "dia": "VIERNES",
+        "hora": "16:35",
+        "dni_paciente": "38099876",
+        "estado": "ausente"
+    },
+    {
+        "medico": "Francisco Colom",
+        "dia": "MIERCOLES",
+        "hora": "14:10",
+        "dni_paciente": "38099876"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "dia": "LUNES",
+        "hora": "14:10",
+        "dni_paciente": "40022695",
+        "estado": "atendido"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "14:05",
+        "fecha": "2025-07-04",
+        "dni_paciente": "38099876",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "14:10",
+        "fecha": "2025-07-08",
+        "dni_paciente": "38099876",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Juan Julian",
+        "hora": "19:00",
+        "fecha": "2025-07-04",
+        "dni_paciente": "38099876",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "09:30",
+        "fecha": "2025-07-17",
+        "dni_paciente": "38099876",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "14:30",
+        "fecha": "2025-07-16",
+        "dni_paciente": "38099876",
+        "estado": "sin atender"
+    }
+]

@@ -1,0 +1,29 @@
+[
+    {
+        "nombre": "Nicolas Hernan",
+        "dni": "37863139",
+        "apellido": "Fernandez",
+        "obra_social": "IOMA",
+        "numero_obra_social": "21321093109",
+        "celular": "1212121234",
+        "fecha_nacimiento": "1993-10-13"
+    },
+    {
+        "nombre": "Maria Julieta",
+        "dni": "40022695",
+        "apellido": "Colom",
+        "obra_social": "swiss medical",
+        "numero_obra_social": "1235567898",
+        "celular": "1155667788",
+        "fecha_nacimiento": "1996-11-04"
+    },
+    {
+        "nombre": "Angel  Gabriel",
+        "apellido": "Aguirre",
+        "dni": "38099876",
+        "obra_social": "IOMA",
+        "numero_obra_social": "090802930823",
+        "celular": "1144556677",
+        "fecha_nacimiento": "1994-03-31"
+    }
+]
