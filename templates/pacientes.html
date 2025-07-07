@@ -34,6 +34,7 @@
         <input type="text" id="obra_social" placeholder="Obra Social" class="input" required>
         <input type="text" id="numero_obra_social" placeholder="N° Obra Social" class="input" required>
         <input type="text" id="celular" placeholder="Celular" class="input" required>
+        <input type="date" id="fecha_nacimiento" placeholder="Fecha de Nacimiento" class="input" required>
 
         <div class="flex gap-2 mt-4">
           <button type="submit" class="bg-primary text-white px-4 py-2 rounded">Guardar</button>
@@ -90,6 +91,7 @@
       document.getElementById("obra_social").value = p.obra_social;
       document.getElementById("numero_obra_social").value = p.numero_obra_social;
       document.getElementById("celular").value = p.celular;
+      document.getElementById("fecha_nacimiento").value = p.fecha_nacimiento || "";
     }
 
     function limpiarFormulario() {
@@ -108,6 +110,7 @@
         obra_social: document.getElementById("obra_social").value.trim(),
         numero_obra_social: document.getElementById("numero_obra_social").value.trim(),
         celular: document.getElementById("celular").value.trim(),
+        fecha_nacimiento: document.getElementById("fecha_nacimiento").value.trim(),
       };
 
       const metodo = document.getElementById("dni").readOnly ? "PUT" : "POST";

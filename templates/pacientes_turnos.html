@@ -127,8 +127,10 @@
           div.innerHTML = `
             <p class="font-semibold text-lg">${paciente.nombre || ""} ${paciente.apellido || ""}</p>
             <p class="text-sm text-gray-600">DNI: ${t.dni_paciente}</p>
-            <p class="text-sm text-gray-600">Fecha: ${formatearFechaHora(t.fecha, t.hora)}</p>
-            <p class="text-sm font-medium text-gray-500 uppercase mb-1">Estado: <span class="capitalize">${estado}</span></p>
+            <p class="text-sm text-gray-600">Fecha: ${t.fecha || "-"}</p>
+            <p class="text-sm text-gray-600">Hora: ${t.hora || "-"}</p>
+            <p class="text-sm text-gray-600">Estado: ${estado}</p>
+            <p class="text-sm text-gray-600">Médico: ${t.medico || "-"}</p>
             ${rolUsuario === 'medico' ? `
               <div class="mt-3 space-x-2">
                 <button onclick='actualizarEstado(${JSON.stringify(t)}, "llamado")' class="bg-warning text-white px-3 py-1 rounded hover:bg-yellow-500">Llamar</button>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Pagos - Caja</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#06B6D4',
+            success: '#10B981',
+            danger: '#EF4444',
+            warning: '#F59E0B'
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-gray-50 text-gray-800 p-6">
+  <h1 class="text-3xl font-bold text-center text-primary mb-6">Gestión de Pagos - Caja</h1>
+
+  <!-- Filtros -->
+  <div class="bg-white shadow rounded-lg p-4 mb-6">
+    <h2 class="text-xl font-semibold mb-4">Filtros</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <input id="filtro-fecha" type="date" class="border border-gray-300 rounded p-2"/>
+      <select id="filtro-medico" class="border border-gray-300 rounded p-2">
+        <option value="">Todos los médicos</option>
+      </select>
+      <select id="filtro-estado-pago" class="border border-gray-300 rounded p-2">
+        <option value="">Todos los estados</option>
+        <option value="pendiente">Pendiente de cobro</option>
+        <option value="recepcionado">Recepcionado (pagado)</option>
+        <option value="atendido">Atendido</option>
+      </select>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="filtrarPagos()" class="bg-secondary text-white px-4 py-2 rounded">Aplicar Filtros</button>
+      <button onclick="limpiarFiltros()" class="bg-gray-300 text-black px-4 py-2 rounded">Limpiar</button>
+      <button onclick="verAtendidosHoy()" class="bg-success text-white px-4 py-2 rounded">Ver Atendidos Hoy</button>
+    </div>
+  </div>
+
+  <!-- Estadísticas del día -->
+  <div class="bg-white shadow rounded-lg p-4 mb-6">
+    <h2 class="text-xl font-semibold mb-4">Resumen del Día</h2>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="bg-blue-50 p-4 rounded">
+        <h3 class="text-lg font-semibold text-blue-800">Turnos Programados</h3>
+        <p class="text-2xl font-bold text-blue-600" id="total-programados">0</p>
+      </div>
+      <div class="bg-yellow-50 p-4 rounded">
+        <h3 class="text-lg font-semibold text-yellow-800">Pendientes de Cobro</h3>
+        <p class="text-2xl font-bold text-yellow-600" id="total-pendientes">0</p>
+      </div>
+      <div class="bg-green-50 p-4 rounded">
+        <h3 class="text-lg font-semibold text-green-800">Recepcionados</h3>
+        <p class="text-2xl font-bold text-green-600" id="total-recepcionados">0</p>
+      </div>
+      <div class="bg-purple-50 p-4 rounded">
+        <h3 class="text-lg font-semibold text-purple-800">Atendidos</h3>
+        <p class="text-2xl font-bold text-purple-600" id="total-atendidos">0</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista de turnos/pagos -->
+  <div class="bg-white shadow rounded-lg p-4">
+    <h2 class="text-xl font-semibold mb-4">Turnos y Pagos</h2>
+    <div id="lista-pagos" class="space-y-3 max-h-96 overflow-auto"></div>
+  </div>
+
+  <a href="/" class="mt-6 block text-center text-primary font-semibold hover:underline">← Volver al inicio</a>
+
+  <script>
+    let pacientes = [];
+    let medicos = [];
+
+    async function cargarDatos() {
+      try {
+        const [resPacientes, resAgenda] = await Promise.all([
+          fetch("/api/pacientes"),
+          fetch("/api/agenda")
+        ]);
+        
+        pacientes = await resPacientes.json();
+        const agenda = await resAgenda.json();
+        medicos = Object.keys(agenda);
+        
+        // Llenar selector de médicos
+        const selectMedico = document.getElementById("filtro-medico");
+        medicos.forEach(medico => {
+          const option = document.createElement("option");
+          option.value = medico;
+          option.textContent = medico;
+          selectMedico.appendChild(option);
+        });
+      } catch (error) {
+        console.error("Error cargando datos:", error);
+        alert("Error al cargar datos");
+      }
+    }
+
+    async function cargarTurnos() {
+      try {
+        const response = await fetch("/api/turnos");
+        const turnos = await response.json();
+        
+        mostrarTurnos(turnos);
+        actualizarEstadisticas(turnos);
+      } catch (error) {
+        console.error("Error cargando turnos:", error);
+        alert("Error al cargar turnos");
+      }
+    }
+
+    function mostrarTurnos(turnos) {
+      const listaPagos = document.getElementById("lista-pagos");
+      listaPagos.innerHTML = "";
+
+      if (turnos.length === 0) {
+        listaPagos.innerHTML = "<p class='text-gray-500 text-center'>No hay turnos para mostrar</p>";
+        return;
+      }
+
+      turnos.forEach(turno => {
+        const paciente = pacientes.find(p => p.dni === turno.dni_paciente) || {};
+        const estado = turno.estado || "sin atender";
+        
+        let estadoColor = "bg-gray-100";
+        let estadoTexto = "Sin atender";
+        let botones = "";
+
+        switch(estado) {
+          case "sin atender":
+            estadoColor = "bg-red-50 border-red-200";
+            estadoTexto = "Pendiente de cobro";
+            botones = `<button onclick='cobrarTurno(${JSON.stringify(turno)})' class="bg-success text-white px-3 py-1 rounded text-sm hover:bg-green-600">Cobrar</button>`;
+            break;
+          case "recepcionado":
+            estadoColor = "bg-blue-50 border-blue-200";
+            estadoTexto = "Recepcionado (Pagado)";
+            botones = `<span class="text-sm text-blue-600">En sala de espera</span>`;
+            break;
+          case "llamado":
+            estadoColor = "bg-yellow-50 border-yellow-200";
+            estadoTexto = "Llamado";
+            botones = `<span class="text-sm text-yellow-600">Siendo atendido</span>`;
+            break;
+          case "atendido":
+            estadoColor = "bg-green-50 border-green-200";
+            estadoTexto = "Atendido";
+            botones = `<span class="text-sm text-green-600">Consulta finalizada</span>`;
+            break;
+          case "ausente":
+            estadoColor = "bg-gray-50 border-gray-200";
+            estadoTexto = "Ausente";
+            botones = `<span class="text-sm text-gray-600">No se presentó</span>`;
+            break;
+        }
+
+        const div = document.createElement("div");
+        div.className = `border p-4 rounded-lg shadow-sm ${estadoColor}`;
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div class="flex-1">
+              <p class="font-semibold text-lg">${paciente.nombre || ""} ${paciente.apellido || ""}</p>
+              <p class="text-sm text-gray-600">DNI: ${turno.dni_paciente}</p>
+              <p class="text-sm text-gray-600">Fecha: ${turno.fecha || "-"}</p>
+              <p class="text-sm text-gray-600">Hora: ${turno.hora}</p>
+              <p class="text-sm text-gray-600">Médico: ${turno.medico}</p>
+              <p class="text-sm text-gray-600">Obra Social: ${paciente.obra_social || "-"}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-medium mb-2">${estadoTexto}</p>
+              ${botones}
+            </div>
+          </div>
+        `;
+        listaPagos.appendChild(div);
+      });
+    }
+
+    function actualizarEstadisticas(turnos) {
+      const programados = turnos.length;
+      const pendientes = turnos.filter(t => !t.estado || t.estado === "sin atender").length;
+      const recepcionados = turnos.filter(t => t.estado === "recepcionado").length;
+      const atendidos = turnos.filter(t => t.estado === "atendido").length;
+
+      document.getElementById("total-programados").textContent = programados;
+      document.getElementById("total-pendientes").textContent = pendientes;
+      document.getElementById("total-recepcionados").textContent = recepcionados;
+      document.getElementById("total-atendidos").textContent = atendidos;
+    }
+
+    async function cobrarTurno(turno) {
+      if (!confirm("¿Confirma el cobro de este turno?")) return;
+
+      try {
+        const response = await fetch("/api/turnos/estado", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dni_paciente: turno.dni_paciente,
+            fecha: turno.fecha,
+            hora: turno.hora,
+            estado: "recepcionado"
+          })
+        });
+
+        if (response.ok) {
+          alert("Turno cobrado y paciente recepcionado correctamente");
+          cargarTurnos();
+        } else {
+          const error = await response.json();
+          alert("Error: " + error.error);
+        }
+      } catch (error) {
+        console.error("Error cobrando turno:", error);
+        alert("Error al cobrar turno");
+      }
+    }
+
+    async function filtrarPagos() {
+      try {
+        const response = await fetch("/api/turnos");
+        const turnos = await response.json();
+        
+        const fechaFiltro = document.getElementById("filtro-fecha").value;
+        const medicoFiltro = document.getElementById("filtro-medico").value;
+        const estadoFiltro = document.getElementById("filtro-estado-pago").value;
+
+        let turnosFiltrados = turnos.filter(turno => {
+          // Filtro por fecha
+          if (fechaFiltro && turno.fecha !== fechaFiltro) {
+            return false;
+          }
+          
+          // Filtro por médico
+          if (medicoFiltro && turno.medico !== medicoFiltro) {
+            return false;
+          }
+          
+          // Filtro por estado
+          if (estadoFiltro) {
+            const estado = turno.estado || "sin atender";
+            if (estadoFiltro === "pendiente" && estado !== "sin atender") {
+              return false;
+            }
+            if (estadoFiltro !== "pendiente" && estado !== estadoFiltro) {
+              return false;
+            }
+          }
+          
+          return true;
+        });
+
+        mostrarTurnos(turnosFiltrados);
+        actualizarEstadisticas(turnosFiltrados);
+      } catch (error) {
+        console.error("Error filtrando pagos:", error);
+      }
+    }
+
+    function limpiarFiltros() {
+      document.getElementById("filtro-fecha").value = "";
+      document.getElementById("filtro-medico").value = "";
+      document.getElementById("filtro-estado-pago").value = "";
+      cargarTurnos();
+    }
+
+    async function verAtendidosHoy() {
+      try {
+        const response = await fetch("/api/pacientes-atendidos");
+        const atendidos = await response.json();
+        
+        // Filtrar solo los de hoy
+        const hoy = new Date().toISOString().split('T')[0];
+        const atendidosHoy = atendidos.filter(t => t.fecha === hoy);
+        
+        mostrarTurnos(atendidosHoy);
+        actualizarEstadisticas(atendidosHoy);
+      } catch (error) {
+        console.error("Error cargando atendidos:", error);
+        alert("Error al cargar pacientes atendidos");
+      }
+    }
+
+    // Inicializar página
+    async function inicializar() {
+      await cargarDatos();
+      await cargarTurnos();
+    }
+
+    inicializar();
+  </script>
+</body>
+</html>

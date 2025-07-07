@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Turnos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#06B6D4',
+            success: '#10B981',
+            danger: '#EF4444',
+            warning: '#F59E0B'
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-gray-50 text-gray-800 p-6">
+  <h1 class="text-3xl font-bold text-center text-primary mb-6">Gestión de Turnos</h1>
+
+  <!-- Filtros -->
+  <div class="bg-white shadow rounded-lg p-4 mb-6">
+    <h2 class="text-xl font-semibold mb-4">Filtros</h2>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <input id="filtro-dni" type="text" placeholder="Filtrar por DNI" class="border border-gray-300 rounded p-2"/>
+      <input id="filtro-apellido" type="text" placeholder="Filtrar por Apellido" class="border border-gray-300 rounded p-2"/>
+      <input id="filtro-fecha" type="date" class="border border-gray-300 rounded p-2"/>
+      <select id="filtro-medico" class="border border-gray-300 rounded p-2">
+        <option value="">Todos los médicos</option>
+      </select>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="filtrarTurnos()" class="bg-secondary text-white px-4 py-2 rounded">Aplicar Filtros</button>
+      <button onclick="limpiarFiltros()" class="bg-gray-300 text-black px-4 py-2 rounded">Limpiar</button>
+      <button onclick="filtrarTurnosDelDia()" class="bg-warning text-white px-4 py-2 rounded">Turnos de Hoy</button>
+    </div>
+  </div>
+
+  <!-- Modal de edición -->
+  <div id="modal-edicion" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+      <h3 class="text-lg font-semibold mb-4">Editar Turno</h3>
+      <form id="form-editar-turno">
+        <input type="hidden" id="turno-id">
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-2">Fecha:</label>
+          <input type="date" id="edit-fecha" class="w-full border border-gray-300 rounded p-2" required>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-2">Hora:</label>
+          <input type="time" id="edit-hora" class="w-full border border-gray-300 rounded p-2" required>
+        </div>
+        <div class="flex gap-2">
+          <button type="submit" class="bg-primary text-white px-4 py-2 rounded">Guardar</button>
+          <button type="button" onclick="cerrarModal()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Turnos -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Lista de turnos programados -->
+    <div class="lg:col-span-2">
+      <div class="bg-white shadow rounded-lg p-4">
+        <h2 class="text-xl font-semibold mb-4">Turnos Programados</h2>
+        <div id="lista-turnos" class="space-y-3 max-h-96 overflow-auto"></div>
+      </div>
+    </div>
+
+    <!-- Sala de espera -->
+    <div class="bg-white shadow rounded-lg p-4">
+      <h2 class="text-xl font-semibold mb-4">Sala de Espera</h2>
+      <div id="sala-espera" class="space-y-3 max-h-96 overflow-auto"></div>
+    </div>
+  </div>
+
+  <a href="/" class="mt-6 block text-center text-primary font-semibold hover:underline">← Volver al inicio</a>
+
+  <script>
+    let pacientes = [];
+    let medicos = [];
+    let turnoEditando = null;
+
+    async function cargarDatos() {
+      try {
+        const [resPacientes, resAgenda] = await Promise.all([
+          fetch("/api/pacientes"),
+          fetch("/api/agenda")
+        ]);
+        
+        pacientes = await resPacientes.json();
+        const agenda = await resAgenda.json();
+        medicos = Object.keys(agenda);
+        
+        // Llenar selector de médicos
+        const selectMedico = document.getElementById("filtro-medico");
+        medicos.forEach(medico => {
+          const option = document.createElement("option");
+          option.value = medico;
+          option.textContent = medico;
+          selectMedico.appendChild(option);
+        });
+      } catch (error) {
+        console.error("Error cargando datos:", error);
+      }
+    }
+
+    async function cargarTurnos() {
+      try {
+        const response = await fetch("/api/turnos");
+        const turnos = await response.json();
+        
+        const listaTurnos = document.getElementById("lista-turnos");
+        const salaEspera = document.getElementById("sala-espera");
+        
+        listaTurnos.innerHTML = "";
+        salaEspera.innerHTML = "";
+
+        // Separar turnos por estado
+        const turnosProgramados = turnos.filter(t => !t.estado || t.estado === "sin atender");
+        const turnosRecepcionados = turnos.filter(t => t.estado === "recepcionado");
+
+        // Mostrar turnos programados
+        turnosProgramados.forEach(turno => {
+          const paciente = pacientes.find(p => p.dni === turno.dni_paciente) || {};
+          const div = document.createElement("div");
+          div.className = "border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50";
+          div.innerHTML = `
+            <p class="font-semibold text-lg">${paciente.nombre || ""} ${paciente.apellido || ""}</p>
+            <p class="text-sm text-gray-600">DNI: ${turno.dni_paciente}</p>
+            <p class="text-sm text-gray-600">Fecha: ${turno.fecha || "-"}</p>
+            <p class="text-sm text-gray-600">Hora: ${turno.hora}</p>
+            <p class="text-sm text-gray-600">Estado: ${turno.estado || "sin atender"}</p>
+            <p class="text-sm text-gray-600">Médico: ${turno.medico}</p>
+            <div class="mt-3 space-x-2">
+              <button onclick='editarTurno(${JSON.stringify(turno)})' class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">Editar</button>
+              <button onclick='recepcionarPaciente(${JSON.stringify(turno)})' class="bg-success text-white px-3 py-1 rounded text-sm hover:bg-green-600">Recepcionar</button>
+              <button onclick='eliminarTurno(${JSON.stringify(turno)})' class="bg-danger text-white px-3 py-1 rounded text-sm hover:bg-red-600">Eliminar</button>
+            </div>
+          `;
+          listaTurnos.appendChild(div);
+        });
+
+        // Mostrar sala de espera
+        turnosRecepcionados.forEach(turno => {
+          const paciente = pacientes.find(p => p.dni === turno.dni_paciente) || {};
+          const div = document.createElement("div");
+          div.className = "border border-gray-200 p-4 rounded-lg shadow-sm bg-blue-50";
+          div.innerHTML = `
+            <p class="font-semibold text-lg">${paciente.nombre || ""} ${paciente.apellido || ""}</p>
+            <p class="text-sm text-gray-600">DNI: ${turno.dni_paciente}</p>
+            <p class="text-sm text-gray-600">Hora: ${turno.hora}</p>
+            <p class="text-sm text-gray-600">Médico: ${turno.medico}</p>
+            <div class="mt-3 space-x-2">
+              <button onclick='llamarPaciente(${JSON.stringify(turno)})' class="bg-warning text-white px-3 py-1 rounded text-sm hover:bg-yellow-600">Llamar</button>
+              <button onclick='atenderPaciente(${JSON.stringify(turno)})' class="bg-success text-white px-3 py-1 rounded text-sm hover:bg-green-600">Atendido</button>
+            </div>
+          `;
+          salaEspera.appendChild(div);
+        });
+
+        if (turnosProgramados.length === 0) {
+          listaTurnos.innerHTML = "<p class='text-gray-500 text-center'>No hay turnos programados</p>";
+        }
+        if (turnosRecepcionados.length === 0) {
+          salaEspera.innerHTML = "<p class='text-gray-500 text-center'>No hay pacientes en sala de espera</p>";
+        }
+
+      } catch (error) {
+        console.error("Error cargando turnos:", error);
+        alert("Error al cargar turnos");
+      }
+    }
+
+    async function recepcionarPaciente(turno) {
+      try {
+        const response = await fetch("/api/turnos/estado", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dni_paciente: turno.dni_paciente,
+            fecha: turno.fecha,
+            hora: turno.hora,
+            estado: "recepcionado"
+          })
+        });
+
+        if (response.ok) {
+          alert("Paciente recepcionado correctamente");
+          cargarTurnos();
+        } else {
+          const error = await response.json();
+          alert("Error: " + error.error);
+        }
+      } catch (error) {
+        console.error("Error recepcionando paciente:", error);
+        alert("Error al recepcionar paciente");
+      }
+    }
+
+    async function llamarPaciente(turno) {
+      try {
+        const response = await fetch("/api/turnos/estado", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dni_paciente: turno.dni_paciente,
+            fecha: turno.fecha,
+            hora: turno.hora,
+            estado: "llamado"
+          })
+        });
+
+        if (response.ok) {
+          cargarTurnos();
+        }
+      } catch (error) {
+        console.error("Error llamando paciente:", error);
+      }
+    }
+
+    async function atenderPaciente(turno) {
+      try {
+        const response = await fetch("/api/turnos/estado", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dni_paciente: turno.dni_paciente,
+            fecha: turno.fecha,
+            hora: turno.hora,
+            estado: "atendido"
+          })
+        });
+
+        if (response.ok) {
+          window.location.href = `/historias?dni=${turno.dni_paciente}`;
+        }
+      } catch (error) {
+        console.error("Error atendiendo paciente:", error);
+      }
+    }
+
+    function editarTurno(turno) {
+      turnoEditando = turno;
+      document.getElementById("edit-fecha").value = turno.fecha || "";
+      document.getElementById("edit-hora").value = turno.hora;
+      document.getElementById("modal-edicion").classList.remove("hidden");
+    }
+
+    function cerrarModal() {
+      document.getElementById("modal-edicion").classList.add("hidden");
+      turnoEditando = null;
+    }
+
+    document.getElementById("form-editar-turno").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      if (!turnoEditando) return;
+
+      const nuevaFecha = document.getElementById("edit-fecha").value;
+      const nuevaHora = document.getElementById("edit-hora").value;
+
+      try {
+        const response = await fetch("/api/turnos/editar", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dni_paciente: turnoEditando.dni_paciente,
+            fecha_original: turnoEditando.fecha,
+            hora_original: turnoEditando.hora,
+            nueva_fecha: nuevaFecha,
+            nueva_hora: nuevaHora
+          })
+        });
+
+        if (response.ok) {
+          alert("Turno actualizado correctamente");
+          cerrarModal();
+          cargarTurnos();
+        } else {
+          const error = await response.json();
+          alert("Error: " + error.error);
+        }
+      } catch (error) {
+        console.error("Error editando turno:", error);
+        alert("Error al editar turno");
+      }
+    });
+
+    async function eliminarTurno(turno) {
+      if (!confirm("¿Está seguro de eliminar este turno?")) return;
+
+      try {
+        const response = await fetch("/api/turnos/eliminar", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dni_paciente: turno.dni_paciente,
+            fecha: turno.fecha,
+            hora: turno.hora,
+            medico: turno.medico
+          })
+        });
+
+        if (response.ok) {
+          alert("Turno eliminado correctamente");
+          cargarTurnos();
+        } else {
+          const error = await response.json();
+          alert("Error: " + error.error);
+        }
+      } catch (error) {
+        console.error("Error eliminando turno:", error);
+        alert("Error al eliminar turno");
+      }
+    }
+
+    async function filtrarTurnos() {
+      try {
+        const response = await fetch("/api/turnos");
+        const turnos = await response.json();
+        
+        const dniFiltro = document.getElementById("filtro-dni").value.trim();
+        const apellidoFiltro = document.getElementById("filtro-apellido").value.trim().toLowerCase();
+        const fechaFiltro = document.getElementById("filtro-fecha").value;
+        const medicoFiltro = document.getElementById("filtro-medico").value;
+
+        let turnosFiltrados = turnos.filter(turno => {
+          const paciente = pacientes.find(p => p.dni === turno.dni_paciente) || {};
+          
+          // Filtro por DNI
+          if (dniFiltro && !turno.dni_paciente.includes(dniFiltro)) {
+            return false;
+          }
+          
+          // Filtro por apellido
+          if (apellidoFiltro && !paciente.apellido?.toLowerCase().includes(apellidoFiltro)) {
+            return false;
+          }
+          
+          // Filtro por fecha
+          if (fechaFiltro && turno.fecha !== fechaFiltro) {
+            return false;
+          }
+          
+          // Filtro por médico
+          if (medicoFiltro && turno.medico !== medicoFiltro) {
+            return false;
+          }
+          
+          return true;
+        });
+
+        mostrarTurnosFiltrados(turnosFiltrados);
+      } catch (error) {
+        console.error("Error filtrando turnos:", error);
+      }
+    }
+
+    function mostrarTurnosFiltrados(turnos) {
+      const listaTurnos = document.getElementById("lista-turnos");
+      const salaEspera = document.getElementById("sala-espera");
+      
+      listaTurnos.innerHTML = "";
+      salaEspera.innerHTML = "";
+
+      // Separar turnos por estado
+      const turnosProgramados = turnos.filter(t => !t.estado || t.estado === "sin atender");
+      const turnosRecepcionados = turnos.filter(t => t.estado === "recepcionado");
+
+      // Mostrar turnos programados
+      turnosProgramados.forEach(turno => {
+        const paciente = pacientes.find(p => p.dni === turno.dni_paciente) || {};
+        const div = document.createElement("div");
+        div.className = "border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50";
+        div.innerHTML = `
+          <p class="font-semibold text-lg">${paciente.nombre || ""} ${paciente.apellido || ""}</p>
+          <p class="text-sm text-gray-600">DNI: ${turno.dni_paciente}</p>
+          <p class="text-sm text-gray-600">Fecha: ${turno.fecha || "-"}</p>
+          <p class="text-sm text-gray-600">Hora: ${turno.hora}</p>
+          <p class="text-sm text-gray-600">Estado: ${turno.estado || "sin atender"}</p>
+          <p class="text-sm text-gray-600">Médico: ${turno.medico}</p>
+          <div class="mt-3 space-x-2">
+            <button onclick='editarTurno(${JSON.stringify(turno)})' class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">Editar</button>
+            <button onclick='recepcionarPaciente(${JSON.stringify(turno)})' class="bg-success text-white px-3 py-1 rounded text-sm hover:bg-green-600">Recepcionar</button>
+            <button onclick='eliminarTurno(${JSON.stringify(turno)})' class="bg-danger text-white px-3 py-1 rounded text-sm hover:bg-red-600">Eliminar</button>
+          </div>
+        `;
+        listaTurnos.appendChild(div);
+      });
+
+      // Mostrar sala de espera
+      turnosRecepcionados.forEach(turno => {
+        const paciente = pacientes.find(p => p.dni === turno.dni_paciente) || {};
+        const div = document.createElement("div");
+        div.className = "border border-gray-200 p-4 rounded-lg shadow-sm bg-blue-50";
+        div.innerHTML = `
+          <p class="font-semibold text-lg">${paciente.nombre || ""} ${paciente.apellido || ""}</p>
+          <p class="text-sm text-gray-600">DNI: ${turno.dni_paciente}</p>
+          <p class="text-sm text-gray-600">Hora: ${turno.hora}</p>
+          <p class="text-sm text-gray-600">Médico: ${turno.medico}</p>
+          <div class="mt-3 space-x-2">
+            <button onclick='llamarPaciente(${JSON.stringify(turno)})' class="bg-warning text-white px-3 py-1 rounded text-sm hover:bg-yellow-600">Llamar</button>
+            <button onclick='atenderPaciente(${JSON.stringify(turno)})' class="bg-success text-white px-3 py-1 rounded text-sm hover:bg-green-600">Atendido</button>
+          </div>
+        `;
+        salaEspera.appendChild(div);
+      });
+
+      if (turnosProgramados.length === 0) {
+        listaTurnos.innerHTML = "<p class='text-gray-500 text-center'>No hay turnos programados que coincidan con los filtros</p>";
+      }
+      if (turnosRecepcionados.length === 0) {
+        salaEspera.innerHTML = "<p class='text-gray-500 text-center'>No hay pacientes en sala de espera que coincidan con los filtros</p>";
+      }
+    }
+
+    function limpiarFiltros() {
+      document.getElementById("filtro-dni").value = "";
+      document.getElementById("filtro-apellido").value = "";
+      document.getElementById("filtro-fecha").value = "";
+      document.getElementById("filtro-medico").value = "";
+      cargarTurnos();
+    }
+
+    function filtrarTurnosDelDia() {
+      const hoy = new Date().toISOString().split('T')[0];
+      document.getElementById("filtro-fecha").value = hoy;
+      filtrarTurnos();
+    }
+
+    // Inicializar página
+    async function inicializar() {
+      await cargarDatos();
+      await cargarTurnos();
+    }
+
+    inicializar();
+  </script>
+</body>
+</html>
