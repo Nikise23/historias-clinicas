@@ -31,6 +31,10 @@
         <input type="text" id="nombre" placeholder="Nombre" class="input" required>
         <input type="text" id="apellido" placeholder="Apellido" class="input" required>
         <input type="text" id="dni" placeholder="DNI" class="input" required>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="date" id="fecha_nacimiento" class="input" placeholder="Fecha de Nacimiento" required>
+          <input type="text" id="edad" placeholder="Edad" class="input" readonly>
+        </div>
         <input type="text" id="obra_social" placeholder="Obra Social" class="input" required>
         <input type="text" id="numero_obra_social" placeholder="N° Obra Social" class="input" required>
         <input type="text" id="celular" placeholder="Celular" class="input" required>
@@ -56,6 +60,34 @@
   <a href="/" class="mt-10 block text-center text-primary font-semibold hover:underline">← Volver al inicio</a>
 
   <script>
+    // Función para calcular la edad
+    function calcularEdad(fechaNacimiento) {
+      if (!fechaNacimiento) return '';
+      
+      const hoy = new Date();
+      const fechaNac = new Date(fechaNacimiento);
+      let edad = hoy.getFullYear() - fechaNac.getFullYear();
+      const mesActual = hoy.getMonth();
+      const mesNacimiento = fechaNac.getMonth();
+      
+      if (mesActual < mesNacimiento || (mesActual === mesNacimiento && hoy.getDate() < fechaNac.getDate())) {
+        edad--;
+      }
+      
+      return edad >= 0 ? edad : '';
+    }
+    
+    // Event listener para calcular edad automáticamente
+    document.addEventListener('DOMContentLoaded', function() {
+      const fechaNacInput = document.getElementById('fecha_nacimiento');
+      const edadInput = document.getElementById('edad');
+      
+      fechaNacInput.addEventListener('change', function() {
+        const edad = calcularEdad(this.value);
+        edadInput.value = edad !== '' ? edad + ' años' : '';
+      });
+    });
+    
     async function cargarPacientes() {
       const filtro = document.getElementById("buscar").value.trim().toLowerCase();
       const lista = document.getElementById("lista-pacientes");
@@ -74,7 +106,8 @@
           div.className = "border border-gray-200 p-3 rounded bg-gray-50 shadow-sm";
           div.innerHTML = `
             <p class="font-semibold">${p.nombre} ${p.apellido}</p>
-            <p class="text-sm">DNI: ${p.dni} | Obra Social: ${p.obra_social}</p>
+            <p class="text-sm">DNI: ${p.dni} | ${p.edad ? 'Edad: ' + p.edad : ''}</p>
+            <p class="text-sm">Obra Social: ${p.obra_social} | Celular: ${p.celular}</p>
             <button onclick='editarPaciente(${JSON.stringify(p)})' class="mt-2 text-sm text-primary hover:underline">Editar</button>
           `;
           lista.appendChild(div);
@@ -87,6 +120,8 @@
       document.getElementById("dni").readOnly = true;
       document.getElementById("nombre").value = p.nombre;
       document.getElementById("apellido").value = p.apellido;
+      document.getElementById("fecha_nacimiento").value = p.fecha_nacimiento || '';
+      document.getElementById("edad").value = p.edad || '';
       document.getElementById("obra_social").value = p.obra_social;
       document.getElementById("numero_obra_social").value = p.numero_obra_social;
       document.getElementById("celular").value = p.celular;
@@ -101,10 +136,15 @@
 
     document.getElementById("form-paciente").addEventListener("submit", async (e) => {
       e.preventDefault();
+      const fechaNacimiento = document.getElementById("fecha_nacimiento").value;
+      const edad = calcularEdad(fechaNacimiento);
+      
       const datos = {
         dni: document.getElementById("dni").value.trim(),
         nombre: document.getElementById("nombre").value.trim(),
         apellido: document.getElementById("apellido").value.trim(),
+        fecha_nacimiento: fechaNacimiento,
+        edad: edad,
         obra_social: document.getElementById("obra_social").value.trim(),
         numero_obra_social: document.getElementById("numero_obra_social").value.trim(),
         celular: document.getElementById("celular").value.trim(),

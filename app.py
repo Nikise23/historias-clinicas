@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session, make_response
 import json
 import os
+import csv
+import io
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, date
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
@@ -15,6 +17,7 @@ USUARIOS_FILE = "usuarios.json"
 PACIENTES_FILE = "pacientes.json"
 TURNOS_FILE = "turnos.json"
 AGENDA_FILE = "agenda.json"
+PAGOS_FILE = "pagos.json"
 
 
 # ===================== Funciones auxiliares ======================
@@ -30,6 +33,17 @@ def cargar_json(path):
 def guardar_json(path, data):
     with open(path, "w", encoding="utf-8") as file:
         json.dump(data, file, indent=4, ensure_ascii=False)
+
+
+def calcular_edad(fecha_nacimiento):
+    """Calcula la edad a partir de la fecha de nacimiento"""
+    try:
+        fecha_nac = datetime.strptime(fecha_nacimiento, "%Y-%m-%d").date()
+        hoy = date.today()
+        edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+        return edad
+    except:
+        return None
 
 
 def validar_historia(data):
@@ -103,7 +117,11 @@ def login():
             if u["usuario"] == usuario and check_password_hash(u["contrasena"], contrasena):
                 session["usuario"] = usuario
                 session["rol"] = u.get("rol", "")
-                return redirect(url_for("inicio"))
+                # Redirigir según el rol
+                if u.get("rol") == "secretaria":
+                    return redirect(url_for("vista_secretaria"))
+                else:
+                    return redirect(url_for("inicio"))
         return render_template("login.html", error="Usuario o contraseña incorrectos")
 
 
@@ -236,20 +254,53 @@ def obtener_pacientes():
 @rol_requerido("secretaria")
 def registrar_paciente():
     data = request.json
-    campos = ["nombre", "apellido", "dni", "obra_social", "numero_obra_social", "celular"]
+    campos = ["nombre", "apellido", "dni", "obra_social", "numero_obra_social", "celular", "fecha_nacimiento"]
     for campo in campos:
         if not data.get(campo):
             return jsonify({"error": f"El campo '{campo}' es obligatorio"}), 400
 
+    # Calcular edad automáticamente
+    if data.get("fecha_nacimiento"):
+        edad = calcular_edad(data["fecha_nacimiento"])
+        data["edad"] = edad
 
     pacientes = cargar_json(PACIENTES_FILE)
     if any(p["dni"] == data["dni"] for p in pacientes):
         return jsonify({"error": "Ya existe un paciente con ese DNI"}), 400
 
-
     pacientes.append(data)
     guardar_json(PACIENTES_FILE, pacientes)
     return jsonify({"mensaje": "Paciente registrado correctamente"})
+
+
+@app.route("/api/pacientes/<dni>", methods=["PUT"])
+@login_requerido
+@rol_requerido("secretaria")
+def actualizar_paciente(dni):
+    data = request.json
+    campos = ["nombre", "apellido", "obra_social", "numero_obra_social", "celular"]
+    for campo in campos:
+        if not data.get(campo):
+            return jsonify({"error": f"El campo '{campo}' es obligatorio"}), 400
+
+    # Calcular edad automáticamente si se proporciona fecha de nacimiento
+    if data.get("fecha_nacimiento"):
+        edad = calcular_edad(data["fecha_nacimiento"])
+        data["edad"] = edad
+
+    pacientes = cargar_json(PACIENTES_FILE)
+    
+    for i, paciente in enumerate(pacientes):
+        if paciente["dni"] == dni:
+            # Actualizar todos los campos excepto el DNI
+            for campo, valor in data.items():
+                if campo != "dni":
+                    pacientes[i][campo] = valor
+            
+            guardar_json(PACIENTES_FILE, pacientes)
+            return jsonify({"mensaje": "Paciente actualizado correctamente"})
+    
+    return jsonify({"error": "Paciente no encontrado"}), 404
 
 
 # --- Rutas para turnos y agenda ---
@@ -497,6 +548,146 @@ def eliminar_turno(dni, fecha, hora):
     
     guardar_json(TURNOS_FILE, turnos_filtrados)
     return jsonify({"mensaje": "Turno eliminado correctamente"})
+
+
+# ======================= SISTEMA DE PAGOS =======================
+
+@app.route("/api/pagos", methods=["GET"])
+@login_requerido
+@rol_requerido("secretaria")
+def obtener_pagos():
+    pagos = cargar_json(PAGOS_FILE)
+    return jsonify(pagos)
+
+
+@app.route("/api/pagos", methods=["POST"])
+@login_requerido
+@rol_requerido("secretaria")
+def registrar_pago():
+    data = request.json
+    campos_requeridos = ["dni_paciente", "monto", "fecha"]
+    
+    for campo in campos_requeridos:
+        if not data.get(campo):
+            return jsonify({"error": f"El campo '{campo}' es requerido"}), 400
+    
+    # Verificar que el paciente existe
+    pacientes = cargar_json(PACIENTES_FILE)
+    paciente = next((p for p in pacientes if p["dni"] == data["dni_paciente"]), None)
+    
+    if not paciente:
+        return jsonify({"error": "Paciente no encontrado"}), 404
+    
+    pagos = cargar_json(PAGOS_FILE)
+    nuevo_pago = {
+        "id": len(pagos) + 1,
+        "dni_paciente": data["dni_paciente"],
+        "nombre_paciente": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
+        "monto": float(data["monto"]),
+        "fecha": data["fecha"],
+        "fecha_registro": datetime.now().isoformat(),
+        "observaciones": data.get("observaciones", "")
+    }
+    
+    pagos.append(nuevo_pago)
+    guardar_json(PAGOS_FILE, pagos)
+    
+    return jsonify({"mensaje": "Pago registrado correctamente", "pago": nuevo_pago}), 201
+
+
+@app.route("/api/pagos/estadisticas", methods=["GET"])
+@login_requerido
+@rol_requerido("secretaria")
+def obtener_estadisticas_pagos():
+    pagos = cargar_json(PAGOS_FILE)
+    hoy = date.today()
+    
+    # Filtrar pagos del día
+    pagos_hoy = [p for p in pagos if p["fecha"] == hoy.isoformat()]
+    total_dia = sum(p["monto"] for p in pagos_hoy)
+    
+    # Filtrar pagos del mes actual
+    mes_actual = hoy.strftime("%Y-%m")
+    pagos_mes = [p for p in pagos if p["fecha"].startswith(mes_actual)]
+    total_mes = sum(p["monto"] for p in pagos_mes)
+    
+    return jsonify({
+        "total_dia": total_dia,
+        "total_mes": total_mes,
+        "cantidad_pagos_dia": len(pagos_hoy),
+        "cantidad_pagos_mes": len(pagos_mes),
+        "fecha": hoy.isoformat()
+    })
+
+
+@app.route("/api/pagos/exportar", methods=["GET"])
+@login_requerido
+@rol_requerido("secretaria")
+def exportar_pagos_csv():
+    pagos = cargar_json(PAGOS_FILE)
+    pacientes = cargar_json(PACIENTES_FILE)
+    
+    # Crear archivo CSV en memoria
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Encabezados
+    writer.writerow(['Fecha', 'Apellido', 'Nombre', 'DNI', 'Monto', 'Observaciones'])
+    
+    # Datos
+    for pago in pagos:
+        paciente = next((p for p in pacientes if p["dni"] == pago["dni_paciente"]), {})
+        writer.writerow([
+            pago["fecha"],
+            paciente.get("apellido", ""),
+            paciente.get("nombre", ""),
+            pago["dni_paciente"],
+            pago["monto"],
+            pago.get("observaciones", "")
+        ])
+    
+    # Preparar respuesta
+    output.seek(0)
+    response = make_response(output.getvalue())
+    response.headers["Content-Disposition"] = f"attachment; filename=pagos_{date.today().isoformat()}.csv"
+    response.headers["Content-type"] = "text/csv"
+    
+    return response
+
+
+@app.route("/api/pacientes/atendidos", methods=["GET"])
+@login_requerido
+@rol_requerido("secretaria")
+def obtener_pacientes_atendidos():
+    """Obtiene pacientes que fueron atendidos y aún no tienen pago registrado para una fecha específica"""
+    fecha = request.args.get("fecha", date.today().isoformat())
+    
+    turnos = cargar_json(TURNOS_FILE)
+    pacientes = cargar_json(PACIENTES_FILE)
+    pagos = cargar_json(PAGOS_FILE)
+    
+    # Filtrar turnos atendidos en la fecha especificada
+    turnos_atendidos = [t for t in turnos if t["fecha"] == fecha and t["estado"] == "atendido"]
+    
+    # Obtener DNIs que ya tienen pago registrado en esa fecha
+    dnis_con_pago = {p["dni_paciente"] for p in pagos if p["fecha"] == fecha}
+    
+    # Filtrar pacientes atendidos sin pago
+    pacientes_sin_pago = []
+    for turno in turnos_atendidos:
+        if turno["dni_paciente"] not in dnis_con_pago:
+            paciente = next((p for p in pacientes if p["dni"] == turno["dni_paciente"]), None)
+            if paciente:
+                pacientes_sin_pago.append({
+                    "dni": paciente["dni"],
+                    "nombre": paciente["nombre"],
+                    "apellido": paciente["apellido"],
+                    "obra_social": paciente.get("obra_social", ""),
+                    "hora_turno": turno["hora"],
+                    "medico": turno["medico"]
+                })
+    
+    return jsonify(pacientes_sin_pago)
 
 
 # ====================================================
