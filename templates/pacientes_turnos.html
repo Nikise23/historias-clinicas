@@ -228,7 +228,12 @@
         if (estado === 'sin atender') {
           botones += `<button onclick='recepcionarPaciente(${JSON.stringify(turno)})' class="bg-green-500 text-white px-2 py-1 text-xs rounded hover:bg-green-600">Recepcionar</button>`;
         } else if (estado === 'recepcionado') {
-          botones += `<button onclick='moverASalaEspera(${JSON.stringify(turno)})' class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600">Sala Espera</button>`;
+          botones += `<button onclick='moverASalaEspera(${JSON.stringify(turno)})' class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600">💰 Cobrar y Sala</button>`;
+        } else if (estado === 'sala de espera') {
+          const pagoInfo = turno.pago_registrado ? 
+            `<div class="text-xs text-green-600 mt-1">✅ Pago: $${turno.monto_pagado || 0}</div>` : 
+            `<div class="text-xs text-orange-600 mt-1">⚠️ Verificar pago</div>`;
+          botones = pagoInfo + botones;
         }
         
         botones += `</div>`;
@@ -349,6 +354,34 @@
     }
 
     async function moverASalaEspera(turno) {
+      const paciente = turno.paciente || {};
+      const nombreCompleto = `${paciente.nombre || ''} ${paciente.apellido || ''}`.trim();
+      const obraSocial = paciente.obra_social || '';
+      
+      // Mostrar información del paciente y solicitar monto
+      const mensajePago = `
+📋 REGISTRAR PAGO
+      
+Paciente: ${nombreCompleto || 'DNI: ' + turno.dni_paciente}
+Obra Social: ${obraSocial}
+Médico: ${turno.medico}
+Fecha: ${turno.fecha} - ${turno.hora}
+
+Ingrese el monto a cobrar:
+(Escriba 0 si está cubierto por obra social)`;
+      
+      const montoStr = prompt(mensajePago, '0');
+      
+      if (montoStr === null) return; // Usuario canceló
+      
+      const monto = parseFloat(montoStr);
+      if (isNaN(monto) || monto < 0) {
+        alert('Por favor ingrese un monto válido (puede ser 0)');
+        return;
+      }
+      
+      const observaciones = prompt('Observaciones (opcional):', '') || '';
+      
       try {
         const response = await fetch('/api/turnos/sala-espera', {
           method: 'PUT',
@@ -358,20 +391,26 @@
           body: JSON.stringify({
             dni_paciente: turno.dni_paciente,
             fecha: turno.fecha,
-            hora: turno.hora
+            hora: turno.hora,
+            monto: monto,
+            observaciones: observaciones
           })
         });
         
         const result = await response.json();
         
         if (response.ok) {
-          alert('Paciente movido a sala de espera');
+          if (monto > 0) {
+            alert(`✅ Pago de $${monto} registrado correctamente\n🏥 Paciente movido a sala de espera`);
+          } else {
+            alert(`✅ Consulta cubierta por obra social\n🏥 Paciente movido a sala de espera`);
+          }
           cargarTurnos();
         } else {
           alert('Error: ' + result.error);
         }
       } catch (error) {
-        alert('Error al mover a sala de espera: ' + error.message);
+        alert('Error al procesar: ' + error.message);
       }
     }
 
