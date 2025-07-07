@@ -144,11 +144,18 @@
         nombre: document.getElementById("nombre").value.trim(),
         apellido: document.getElementById("apellido").value.trim(),
         fecha_nacimiento: fechaNacimiento,
-        edad: edad,
+        edad: edad || 0,
         obra_social: document.getElementById("obra_social").value.trim(),
         numero_obra_social: document.getElementById("numero_obra_social").value.trim(),
         celular: document.getElementById("celular").value.trim(),
       };
+      
+      // Validar que todos los campos estén completos
+      if (!datos.dni || !datos.nombre || !datos.apellido || !datos.fecha_nacimiento || 
+          !datos.obra_social || !datos.numero_obra_social || !datos.celular) {
+        alert('Por favor complete todos los campos obligatorios');
+        return;
+      }
 
       const metodo = document.getElementById("dni").readOnly ? "PUT" : "POST";
       const url = metodo === "PUT" ? `/api/pacientes/${datos.dni}` : "/api/pacientes";
