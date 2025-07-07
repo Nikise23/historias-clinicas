@@ -738,6 +738,47 @@ def obtener_pacientes_atendidos():
     return jsonify(pacientes_sin_pago)
 
 
+@app.route("/api/pacientes/recepcionados", methods=["GET"])
+@login_requerido
+@rol_permitido(["secretaria", "medico"])
+def obtener_pacientes_recepcionados():
+    """Obtiene pacientes que están recepcionados y pendientes de pago"""
+    fecha = request.args.get("fecha", date.today().isoformat())
+    
+    turnos = cargar_json(TURNOS_FILE)
+    pacientes = cargar_json(PACIENTES_FILE)
+    pagos = cargar_json(PAGOS_FILE)
+    
+    # Filtrar turnos recepcionados en la fecha especificada
+    turnos_recepcionados = [t for t in turnos if t.get("fecha") == fecha and t.get("estado") == "recepcionado"]
+    
+    # Obtener DNIs que ya tienen pago registrado en esa fecha
+    dnis_con_pago = {p["dni_paciente"] for p in pagos if p["fecha"] == fecha}
+    
+    # Filtrar pacientes recepcionados sin pago
+    pacientes_recepcionados = []
+    for turno in turnos_recepcionados:
+        if turno["dni_paciente"] not in dnis_con_pago:
+            paciente = next((p for p in pacientes if p["dni"] == turno["dni_paciente"]), None)
+            if paciente:
+                pacientes_recepcionados.append({
+                    "dni": paciente["dni"],
+                    "nombre": paciente["nombre"],
+                    "apellido": paciente["apellido"],
+                    "obra_social": paciente.get("obra_social", ""),
+                    "celular": paciente.get("celular", ""),
+                    "hora_turno": turno["hora"],
+                    "medico": turno["medico"],
+                    "fecha": turno["fecha"],
+                    "hora_recepcion": turno.get("hora_recepcion", "")
+                })
+    
+    # Ordenar por hora de turno
+    pacientes_recepcionados.sort(key=lambda p: p.get("hora_turno", "00:00"))
+    
+    return jsonify(pacientes_recepcionados)
+
+
 # ======================= SISTEMA DE RECEPCIÓN =======================
 
 @app.route("/api/turnos/recepcionar", methods=["PUT"])
@@ -847,6 +888,84 @@ def mover_a_sala_espera():
     
     return jsonify({
         "mensaje": "Paciente movido a sala de espera y pago registrado",
+        "pago": nuevo_pago
+    })
+
+
+@app.route("/api/pagos/cobrar-y-sala", methods=["PUT"])
+@login_requerido
+@rol_permitido(["secretaria"])
+def cobrar_y_mover_a_sala():
+    """Cobrar a un paciente recepcionado y moverlo a sala de espera desde gestión de pagos"""
+    data = request.json
+    dni_paciente = data.get("dni_paciente")
+    fecha = data.get("fecha")
+    monto = data.get("monto", 0)
+    observaciones = data.get("observaciones", "")
+    
+    if not all([dni_paciente, fecha]):
+        return jsonify({"error": "DNI y fecha son requeridos"}), 400
+    
+    # Validar monto
+    try:
+        monto = float(monto)
+        if monto < 0:
+            return jsonify({"error": "El monto no puede ser negativo"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "Monto inválido"}), 400
+    
+    turnos = cargar_json(TURNOS_FILE)
+    pacientes = cargar_json(PACIENTES_FILE)
+    
+    # Buscar el turno recepcionado
+    turno_encontrado = None
+    for turno in turnos:
+        if (turno["dni_paciente"] == dni_paciente and 
+            turno["fecha"] == fecha and 
+            turno.get("estado") == "recepcionado"):
+            turno_encontrado = turno
+            break
+    
+    if not turno_encontrado:
+        return jsonify({"error": "No se encontró un turno recepcionado para este paciente en esta fecha"}), 404
+    
+    # Verificar que el paciente existe
+    paciente = next((p for p in pacientes if p["dni"] == dni_paciente), None)
+    if not paciente:
+        return jsonify({"error": "Paciente no encontrado"}), 404
+    
+    # Verificar si ya existe un pago para este paciente en esta fecha
+    pagos = cargar_json(PAGOS_FILE)
+    pago_existente = next((p for p in pagos if p["dni_paciente"] == dni_paciente and p["fecha"] == fecha), None)
+    
+    if pago_existente:
+        return jsonify({"error": "Ya existe un pago registrado para este paciente en esta fecha"}), 400
+    
+    # Registrar el pago
+    nuevo_pago = {
+        "id": len(pagos) + 1,
+        "dni_paciente": dni_paciente,
+        "nombre_paciente": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
+        "monto": monto,
+        "fecha": fecha,
+        "fecha_registro": datetime.now().isoformat(),
+        "observaciones": observaciones,
+        "obra_social": paciente.get("obra_social", "")
+    }
+    
+    pagos.append(nuevo_pago)
+    guardar_json(PAGOS_FILE, pagos)
+    
+    # Mover a sala de espera
+    turno_encontrado["estado"] = "sala de espera"
+    turno_encontrado["hora_sala_espera"] = datetime.now().strftime("%H:%M")
+    turno_encontrado["pago_registrado"] = True
+    turno_encontrado["monto_pagado"] = monto
+    
+    guardar_json(TURNOS_FILE, turnos)
+    
+    return jsonify({
+        "mensaje": "Pago registrado y paciente movido a sala de espera",
         "pago": nuevo_pago
     })
 
