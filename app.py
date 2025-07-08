@@ -645,22 +645,52 @@ def eliminar_pago(pago_id):
 def obtener_estadisticas_pagos():
     pagos = cargar_json(PAGOS_FILE)
     hoy = date.today()
+    mes_param = request.args.get("mes", hoy.strftime("%Y-%m"))
     
     # Filtrar pagos del día
     pagos_hoy = [p for p in pagos if p["fecha"] == hoy.isoformat()]
     total_dia = sum(p["monto"] for p in pagos_hoy)
     
-    # Filtrar pagos del mes actual
-    mes_actual = hoy.strftime("%Y-%m")
-    pagos_mes = [p for p in pagos if p["fecha"].startswith(mes_actual)]
+    # Filtrar pagos del mes especificado
+    pagos_mes = [p for p in pagos if p["fecha"].startswith(mes_param)]
     total_mes = sum(p["monto"] for p in pagos_mes)
+    
+    # Estadísticas por día del mes
+    pagos_por_dia = {}
+    pagos_obra_social = 0
+    pagos_particulares = 0
+    
+    for pago in pagos_mes:
+        dia = pago["fecha"]
+        if dia not in pagos_por_dia:
+            pagos_por_dia[dia] = {"cantidad": 0, "monto": 0, "pacientes": []}
+        
+        pagos_por_dia[dia]["cantidad"] += 1
+        pagos_por_dia[dia]["monto"] += pago["monto"]
+        pagos_por_dia[dia]["pacientes"].append({
+            "nombre": pago["nombre_paciente"],
+            "monto": pago["monto"],
+            "obra_social": pago.get("obra_social", "")
+        })
+        
+        if pago["monto"] == 0:
+            pagos_obra_social += 1
+        else:
+            pagos_particulares += 1
+    
+    # Ordenar días por fecha
+    pagos_por_dia_ordenados = dict(sorted(pagos_por_dia.items()))
     
     return jsonify({
         "total_dia": total_dia,
         "total_mes": total_mes,
         "cantidad_pagos_dia": len(pagos_hoy),
         "cantidad_pagos_mes": len(pagos_mes),
-        "fecha": hoy.isoformat()
+        "pagos_obra_social": pagos_obra_social,
+        "pagos_particulares": pagos_particulares,
+        "fecha": hoy.isoformat(),
+        "mes_consultado": mes_param,
+        "detalle_por_dia": pagos_por_dia_ordenados
     })
 
 
