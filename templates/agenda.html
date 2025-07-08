@@ -38,6 +38,12 @@
     </div>
   </div>
 
+  <!-- Mensaje de bienvenida desde registro -->
+  <div id="mensaje-desde-registro" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+    <strong>¡Perfecto!</strong> <span id="mensaje-paciente"></span> Ya puedes seleccionar el médico y horario para asignar el turno.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
   <div id="agenda-container" class="accordion mb-5"></div>
 
   <!-- Modal para asignar turno -->
@@ -138,6 +144,15 @@
       select.innerHTML = pacientes.map(p =>
         `<option value="${p.dni}">${p.apellido}, ${p.nombre} (${p.dni})</option>`
       ).join("");
+      
+      // Preseleccionar paciente si viene en URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const dniPreseleccionado = urlParams.get('dni');
+      if (dniPreseleccionado) {
+        select.value = dniPreseleccionado;
+        // Limpiar el parámetro de la URL después de usarlo
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
 
       const modal = new bootstrap.Modal(document.getElementById("modalTurno"));
       modal.show();
@@ -178,6 +193,18 @@
       pacientes = await pacientesRes.json();
       turnos = await turnosRes.json();
       renderAgenda();
+      
+      // Mostrar mensaje si viene desde registro de paciente
+      const urlParams = new URLSearchParams(window.location.search);
+      const dniDesdeRegistro = urlParams.get('dni');
+      if (dniDesdeRegistro) {
+        const paciente = pacientes.find(p => p.dni === dniDesdeRegistro);
+        if (paciente) {
+          document.getElementById('mensaje-paciente').textContent = 
+            `El paciente ${paciente.nombre} ${paciente.apellido} (DNI: ${paciente.dni}) ha sido registrado exitosamente.`;
+          document.getElementById('mensaje-desde-registro').classList.remove('d-none');
+        }
+      }
     }
 
     init();
