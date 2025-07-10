@@ -536,7 +536,7 @@
       if (!fecha) return alert("Debe seleccionar una fecha");
 
       const pacienteSeleccionado = pacientes.find(p => p.dni === dni_paciente);
-      const fechaFormateada = new Date(fecha).toLocaleDateString('es-ES');
+      const fechaFormateada = formatearFechaLocal(fecha);
 
       fetch("/api/turnos", {
         method: "POST",
