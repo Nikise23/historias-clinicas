@@ -5,23 +5,68 @@
   <title>Agenda Médica</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    .hora-disponible { background-color: #e0f7fa; cursor: pointer; }
-    .hora-ocupada { background-color: #ffcdd2; }
+    .hora-disponible { 
+      background-color: #e0f7fa; 
+      cursor: pointer; 
+      transition: all 0.3s ease;
+      border: 2px solid #17a2b8 !important;
+    }
+    
+    .hora-disponible:hover { 
+      background-color: #17a2b8 !important; 
+      color: white !important;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+    }
+    
+    .hora-ocupada { 
+      background-color: #ffcdd2; 
+      cursor: not-allowed;
+    }
     .hora {
-      padding: 6px 12px;
+      padding: 8px 12px;
       margin: 4px;
-      border-radius: 6px;
+      border-radius: 8px;
       display: inline-block;
       font-size: 14px;
+      font-weight: 500;
     }
+
     .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1rem;
     }
+
     .top-bar h2 {
       margin: 0;
+    }
+    /* Indicador visual para clicks */
+    .hora-disponible:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(23, 162, 184, 0.5);
+    }
+    
+    /* Mejorar el acordeón */
+    .accordion-button:not(.collapsed) {
+      background-color: #e3f2fd !important;
+      color: #1976d2 !important;
+    }
+    
+    /* Destacar días con horarios */
+    .text-primary {
+      font-weight: 600;
+    }
+    
+    /* Animación de entrada para horarios */
+    .hora-disponible {
+      animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
     }
   </style>
 </head>
@@ -35,6 +80,29 @@
     <div>
       <a href="/pacientes" class="btn btn-primary me-2">Registrar Paciente</a>
       <button class="btn btn-outline-dark" disabled>Ver Agenda</button>
+    </div>
+  </div>
+
+  <!-- Mensaje de bienvenida desde registro -->
+  <div id="mensaje-desde-registro" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+    <strong>¡Perfecto!</strong> <span id="mensaje-paciente"></span> 
+    <br><br>
+    <strong>Instrucciones:</strong>
+    <ol class="mb-0 mt-2">
+      <li>Expande el médico deseado haciendo clic en su nombre</li>
+      <li>Selecciona un horario disponible (los botones azules con 📅)</li>
+      <li>Confirma la fecha del turno en el modal</li>
+      <li>El paciente ya estará preseleccionado automáticamente</li>
+    </ol>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+  <!-- Instrucciones generales siempre visibles -->
+  <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+    <div>
+      <strong>💡 Cómo asignar un turno:</strong> 
+      Expande el acordeón del médico y haz clic en cualquier horario disponible (botones azules). 
+      El paciente se preseleccionará automáticamente si vienes desde el registro.
     </div>
   </div>
 
@@ -79,24 +147,32 @@
     function renderAgenda() {
       const container = document.getElementById("agenda-container");
       container.innerHTML = "";
-
+      
+      let isFirst = true;
       for (const med in agenda) {
         const collapseId = `collapse-${med.replace(/\s/g, "")}`;
         const card = document.createElement("div");
         card.className = "accordion-item mb-3 shadow-sm";
+        // Para el primer médico, expandir automáticamente si viene desde registro
+        const urlParams = new URLSearchParams(window.location.search);
+        const shouldExpand = isFirst && urlParams.get('dni');
+        const buttonClass = shouldExpand ? "accordion-button bg-light fw-bold" : "accordion-button collapsed bg-light fw-bold";
+        const collapseClass = shouldExpand ? "accordion-collapse collapse show" : "accordion-collapse collapse";
+        
         card.innerHTML = `
           <h2 class="accordion-header">
-            <button class="accordion-button collapsed bg-light fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-              ${med}
+            <button class="${buttonClass}" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+              ${med} <span class="text-muted small ms-2">(Haz clic en un horario para asignar turno)</span>
             </button>
           </h2>
-          <div id="${collapseId}" class="accordion-collapse collapse">
+          <div id="${collapseId}" class="${collapseClass}">
             <div class="accordion-body">
               ${renderDias(med)}
             </div>
           </div>
         `;
         container.appendChild(card);
+        isFirst = false;
       }
 
       var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -110,17 +186,27 @@
       const dias = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"];
 
       for (const dia of dias) {
-        html += `<h6 class="mt-3">${dia}</h6><div class="mb-2">`;
+        
         const horas = agenda[medico][dia] || [];
-        for (const hora of horas) {
-          html += `<span class="hora hora-disponible"
-                        title="Disponible"
-                        data-bs-toggle="tooltip"
-                        onclick="toggleHora('${medico}', '${hora}')">
-                       ${hora}
-                     </span>`;
+        if (horas.length > 0) {
+          html += `<h6 class="mt-3 mb-2 text-primary">${dia}</h6><div class="mb-3">`;
+          for (const hora of horas) {
+            html += `<span class="hora hora-disponible btn btn-outline-info btn-sm me-2 mb-2"
+                          title="Clic para asignar turno a las ${hora}"
+                          data-bs-toggle="tooltip"
+                          onclick="toggleHora('${medico}', '${hora}')">
+                         📅 ${hora}
+                       </span>`;
+          }
+          html += "</div>";
+        } else {
+          html += `<h6 class="mt-3 mb-2 text-muted">${dia}</h6>`;
+          html += `<p class="text-muted small mb-3">Sin horarios disponibles</p>`;
         }
-        html += "</div>";
+      }
+      
+      if (html === "") {
+        html = "<p class='text-muted'>No hay horarios configurados para este médico</p>";
       }
       return html;
     }
@@ -130,6 +216,7 @@
       mostrarModalTurno();
     }
 
+    
     function mostrarModalTurno() {
       document.getElementById("info-turno").textContent =
         `Turno para ${turnoActual.medico} a las ${turnoActual.hora}`;
@@ -138,6 +225,32 @@
       select.innerHTML = pacientes.map(p =>
         `<option value="${p.dni}">${p.apellido}, ${p.nombre} (${p.dni})</option>`
       ).join("");
+      
+      // Preseleccionar paciente si viene en URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const dniPreseleccionado = urlParams.get('dni');
+      if (dniPreseleccionado) {
+        select.value = dniPreseleccionado;
+        const pacienteSeleccionado = pacientes.find(p => p.dni === dniPreseleccionado);
+        if (pacienteSeleccionado) {
+          // Resaltar que el paciente está preseleccionado
+          select.style.border = "3px solid #28a745";
+          select.style.backgroundColor = "#d4edda";
+          
+          // Agregar un mensaje temporal
+          const infoTurno = document.getElementById("info-turno");
+          infoTurno.innerHTML = `
+            <strong>Turno para ${turnoActual.medico} a las ${turnoActual.hora}</strong><br>
+            <small class="text-success">✅ Paciente preseleccionado: ${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellido}</small>
+          `;
+        }
+        // Limpiar el parámetro de la URL después de usarlo
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else {
+        // Restablecer estilos normales
+        select.style.border = "";
+        select.style.backgroundColor = "";
+      }
 
       const modal = new bootstrap.Modal(document.getElementById("modalTurno"));
       modal.show();
@@ -149,6 +262,9 @@
       const fecha = document.getElementById("fecha-turno").value;
       if (!fecha) return alert("Debe seleccionar una fecha");
 
+      const pacienteSeleccionado = pacientes.find(p => p.dni === dni_paciente);
+      const fechaFormateada = new Date(fecha).toLocaleDateString('es-ES');
+
       fetch("/api/turnos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -159,9 +275,31 @@
         if (data.error) {
           alert("Error: " + data.error);
         } else {
-          alert(data.mensaje);
-          fetchTurnos().then(() => renderAgenda());
+          // Cerrar el modal primero
+          const modal = bootstrap.Modal.getInstance(document.getElementById("modalTurno"));
+          modal.hide();
+          
+          // Mostrar mensaje de confirmación personalizado
+          const mensaje = `
+            ¡Turno asignado exitosamente! 🎉
+            
+            📅 Fecha: ${fechaFormateada}
+            ⏰ Hora: ${turnoActual.hora}
+            👤 Paciente: ${pacienteSeleccionado ? pacienteSeleccionado.nombre + ' ' + pacienteSeleccionado.apellido : dni_paciente}
+            👨‍⚕️ Médico: ${turnoActual.medico}
+            
+            ¿Qué deseas hacer ahora?
+          `;
+          
+          if (confirm(mensaje + "\n\nPresiona OK para registrar otro paciente o Cancelar para quedarte en la agenda")) {
+            window.location.href = "/pacientes";
+          } else {
+            fetchTurnos().then(() => renderAgenda());
+          }
         }
+      })
+      .catch(error => {
+        alert("Error de conexión: " + error.message);
       });
     });
 
@@ -178,6 +316,18 @@
       pacientes = await pacientesRes.json();
       turnos = await turnosRes.json();
       renderAgenda();
+      
+      // Mostrar mensaje si viene desde registro de paciente
+      const urlParams = new URLSearchParams(window.location.search);
+      const dniDesdeRegistro = urlParams.get('dni');
+      if (dniDesdeRegistro) {
+        const paciente = pacientes.find(p => p.dni === dniDesdeRegistro);
+        if (paciente) {
+          document.getElementById('mensaje-paciente').textContent = 
+            `El paciente ${paciente.nombre} ${paciente.apellido} (DNI: ${paciente.dni}) ha sido registrado exitosamente.`;
+          document.getElementById('mensaje-desde-registro').classList.remove('d-none');
+        }
+      }
     }
 
     init();

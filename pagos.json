@@ -1,0 +1,32 @@
+[
+    {
+        "id": 2,
+        "dni_paciente": "40009987",
+        "nombre_paciente": "Matias Colom",
+        "monto": 10000.0,
+        "fecha": "2025-07-08",
+        "fecha_registro": "2025-07-08T16:33:08.680179",
+        "observaciones": "",
+        "obra_social": "swiss medical"
+    },
+    {
+        "id": 3,
+        "dni_paciente": "40022695",
+        "nombre_paciente": "Maria Julieta Colom",
+        "monto": 15000.0,
+        "fecha": "2025-07-08",
+        "fecha_registro": "2025-07-08T16:33:20.595498",
+        "observaciones": "",
+        "obra_social": "swiss medical"
+    },
+    {
+        "id": 3,
+        "dni_paciente": "38099876",
+        "nombre_paciente": "Angel  Gabriel Aguirre",
+        "monto": 0.0,
+        "fecha": "2025-07-08",
+        "fecha_registro": "2025-07-08T17:01:41.417335",
+        "observaciones": "osde",
+        "obra_social": "IOMA"
+    }
+]

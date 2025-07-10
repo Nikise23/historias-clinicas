@@ -24,38 +24,42 @@
   <h1 class="text-3xl font-bold text-center text-primary mb-6">Turnos asignados</h1>
 
   <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-    <input id="filtro-dni" type="text" placeholder="Filtrar por DNI" class="border border-gray-300 rounded-md p-2 w-full md:w-1/4"/>
-    <input id="filtro-apellido" type="text" placeholder="Filtrar por Apellido" class="border border-gray-300 rounded-md p-2 w-full md:w-1/4"/>
-    <input id="filtro-fecha" type="date" class="border border-gray-300 rounded-md p-2 w-full md:w-1/4"/>
-    <select id="filtro-semana" class="border border-gray-300 rounded-md p-2 w-full md:w-1/4">
-      <option value="">Filtrar por semana</option>
-      <option value="1">Semana 1 (1–7)</option>
-      <option value="2">Semana 2 (8–14)</option>
-      <option value="3">Semana 3 (15–21)</option>
-      <option value="4">Semana 4 (22–28)</option>
-      <option value="5">Semana 5 (29–31)</option>
+    <input id="filtro-dni" type="text" placeholder="Filtrar por DNI" class="border border-gray-300 rounded-md p-2 w-full md:w-1/5"/>
+    <input id="filtro-apellido" type="text" placeholder="Filtrar por Apellido" class="border border-gray-300 rounded-md p-2 w-full md:w-1/5"/>
+    <input id="filtro-fecha" type="date" class="border border-gray-300 rounded-md p-2 w-full md:w-1/5"/>
+    <select id="filtro-medico" class="border border-gray-300 rounded-md p-2 w-full md:w-1/5">
+      <option value="">Todos los médicos</option>
     </select>
     <div class="flex gap-2">
-      <button onclick="filtrarPorFecha()" class="bg-secondary text-white px-4 py-2 rounded-md">Filtrar por Fecha</button>
-      <button onclick="cargarTurnos()" class="bg-gray-300 text-black px-4 py-2 rounded-md">Limpiar Filtros</button>
+      <button onclick="aplicarFiltros()" class="bg-secondary text-white px-4 py-2 rounded-md">Aplicar Filtros</button>
+      <button onclick="cargarTurnosDelDia()" class="bg-primary text-white px-4 py-2 rounded-md">Turnos de Hoy</button>
+      <button onclick="limpiarFiltros()" class="bg-gray-300 text-black px-4 py-2 rounded-md">Limpiar</button>
     </div>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
     <div>
       <h2 class="text-lg font-semibold text-gray-700 mb-2">Sin Atender</h2>
-      <div id="sin-atender" class="space-y-2"></div>
+      <div id="sin atender" class="space-y-2"></div>
     </div>
     <div>
-      <h2 class="text-lg font-semibold text-gray-700 mb-2">Llamado</h2>
+      <h2 class="text-lg font-semibold text-green-700 mb-2">Recepcionado</h2>
+      <div id="recepcionado" class="space-y-2"></div>
+    </div>
+    <div>
+      <h2 class="text-lg font-semibold text-blue-700 mb-2">Sala de Espera</h2>
+      <div id="sala de espera" class="space-y-2"></div>
+    </div>
+    <div>
+      <h2 class="text-lg font-semibold text-yellow-700 mb-2">Llamado</h2>
       <div id="llamado" class="space-y-2"></div>
     </div>
     <div>
-      <h2 class="text-lg font-semibold text-gray-700 mb-2">Atendido</h2>
+      <h2 class="text-lg font-semibold text-green-700 mb-2">Atendido</h2>
       <div id="atendido" class="space-y-2"></div>
     </div>
     <div>
-      <h2 class="text-lg font-semibold text-gray-700 mb-2">Ausente</h2>
+      <h2 class="text-lg font-semibold text-red-700 mb-2">Ausente</h2>
       <div id="ausente" class="space-y-2"></div>
     </div>
   </div>
@@ -64,7 +68,25 @@
 
   <script>
     let pacientes = [];
+    let turnos = [];
+    let medicos = [];
     let rolUsuario = null;
+
+    async function cargarDatosIniciales() {
+      try {
+        await obtenerRol();
+        await cargarPacientes();
+        await cargarMedicos();
+        
+        // Configurar fecha de hoy por defecto
+        document.getElementById("filtro-fecha").value = new Date().toISOString().split('T')[0];
+        
+        // Cargar turnos del día por defecto
+        await cargarTurnosDelDia();
+      } catch (error) {
+        console.error('Error cargando datos:', error);
+      }
+    }
 
     async function cargarPacientes() {
       const res = await fetch("/api/pacientes");
@@ -77,67 +99,144 @@
       rolUsuario = data.rol;
     }
 
-    function formatearFechaHora(fecha, hora) {
-      if (!fecha || !hora) return "-";
+     async function cargarMedicos() {
+      try {
+        const res = await fetch("/api/turnos");
+        const todosTurnos = await res.json();
+        medicos = [...new Set(todosTurnos.map(t => t.medico))];
+        
+        const selectMedico = document.getElementById("filtro-medico");
+        medicos.forEach(medico => {
+          const option = document.createElement("option");
+          option.value = medico;
+          option.textContent = medico;
+          selectMedico.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error cargando médicos:', error);
+      }
+    }
+
+    function formatearFecha(fecha) {
+      if (!fecha) return "-";
       const [y, m, d] = fecha.split("-");
-      return `${d}/${m}/${y} - ${hora}`;
+      return `${d}/${m}/${y}`;
     }
 
-    function obtenerSemanaDelMes(fechaStr) {
-      const [y, m, d] = fechaStr.split("-").map(Number);
-      if (!d) return null;
-      if (d >= 1 && d <= 7) return 1;
-      if (d >= 8 && d <= 14) return 2;
-      if (d >= 15 && d <= 21) return 3;
-      if (d >= 22 && d <= 28) return 4;
-      return 5;
+    async function cargarTurnosDelDia() {
+      const fecha = new Date().toISOString().split('T')[0];
+      document.getElementById("filtro-fecha").value = fecha;
+      await cargarTurnos();
     }
 
-    async function cargarTurnos(filtroExtra = () => true) {
-      await obtenerRol();
+    async function cargarTurnos() {
+      try {
+        await obtenerRol();
+        
+        const fecha = document.getElementById("filtro-fecha").value || new Date().toISOString().split('T')[0];
+        
+        // Cargar turnos del día específico
+        const response = await fetch(`/api/turnos/dia?fecha=${fecha}`);
+        turnos = await response.json();
 
-      const dniFiltro = document.getElementById("filtro-dni").value.trim();
-      const apellidoFiltro = document.getElementById("filtro-apellido").value.trim().toLowerCase();
-      const semanaFiltro = document.getElementById("filtro-semana").value;
-
-      const turnos = await fetch('/api/turnos/medico').then(r => r.json());
+      // // Secretaria puede ver todos los turnos, médico solo los suyos
+      // const endpoint = rolUsuario === 'secretaria' ? '/api/turnos' : '/api/turnos/medico';
+      // const turnos = await fetch(endpoint).then(r => r.json());
 
       const estados = {
-        "sin atender": document.getElementById("sin-atender"),
-        "llamado": document.getElementById("llamado"),
-        "atendido": document.getElementById("atendido"),
-        "ausente": document.getElementById("ausente")
-      };
+          "sin atender": document.getElementById("sin atender"),
+          "recepcionado": document.getElementById("recepcionado"),
+          "sala de espera": document.getElementById("sala de espera"),
+          "llamado": document.getElementById("llamado"),
+          "atendido": document.getElementById("atendido"),
+          "ausente": document.getElementById("ausente")
+        };
+// Limpiar columnas
+        Object.values(estados).forEach(div => {
+          if (div) div.innerHTML = "";
+        });
 
-      Object.values(estados).forEach(div => div.innerHTML = "");
+        // Aplicar filtros
+        const turnosFiltrados = aplicarFiltrosLocales(turnos);
 
-      turnos
-        .filter(t =>
-          (!dniFiltro || t.dni_paciente === dniFiltro) &&
-          (!apellidoFiltro || (pacientes.find(p => p.dni === t.dni_paciente)?.apellido?.toLowerCase().includes(apellidoFiltro))) &&
-          filtroExtra(t) &&
-          (!semanaFiltro || obtenerSemanaDelMes(t.fecha) === parseInt(semanaFiltro))
-        )
-        .forEach(t => {
-          const paciente = pacientes.find(p => p.dni === t.dni_paciente) || {};
+        turnosFiltrados.forEach(t => {
+          const paciente = t.paciente || {};
           const estado = t.estado || "sin atender";
 
           const div = document.createElement("div");
-          div.className = "border border-gray-200 p-4 rounded-lg shadow bg-white";
+          div.className = "border border-gray-200 p-3 rounded-lg shadow bg-white";
+
           div.innerHTML = `
             <p class="font-semibold text-lg">${paciente.nombre || ""} ${paciente.apellido || ""}</p>
             <p class="text-sm text-gray-600">DNI: ${t.dni_paciente}</p>
-            <p class="text-sm text-gray-600">Fecha: ${formatearFechaHora(t.fecha, t.hora)}</p>
-            <p class="text-sm font-medium text-gray-500 uppercase mb-1">Estado: <span class="capitalize">${estado}</span></p>
-            ${rolUsuario === 'medico' ? `
-              <div class="mt-3 space-x-2">
-                <button onclick='actualizarEstado(${JSON.stringify(t)}, "llamado")' class="bg-warning text-white px-3 py-1 rounded hover:bg-yellow-500">Llamar</button>
-                <button onclick='actualizarEstado(${JSON.stringify(t)}, "atendido")' class="bg-success text-white px-3 py-1 rounded hover:bg-green-600">Atendido</button>
-                <button onclick='actualizarEstado(${JSON.stringify(t)}, "ausente")' class="bg-danger text-white px-3 py-1 rounded hover:bg-red-600">Ausente</button>
-              </div>` : ""}
+             <p class="text-sm text-gray-600">Fecha: ${formatearFecha(t.fecha)}</p>
+            <p class="text-sm text-gray-600">Hora: ${t.hora}</p>
+            <p class="text-sm text-gray-600">Médico: ${t.medico}</p>
+            <p class="text-sm font-medium text-gray-500 uppercase mb-2">Estado: <span class="capitalize">${estado}</span></p>
+            ${generarBotones(t, estado)}
           `;
-          estados[estado]?.appendChild(div);
+          
+          if (estados[estado]) {
+            estados[estado].appendChild(div);
+          }
         });
+      } catch (error) {
+        console.error('Error cargando turnos:', error);
+        alert('Error al cargar los turnos');
+      }
+    }
+
+    function aplicarFiltrosLocales(turnosParaFiltrar) {
+      const dniFiltro = document.getElementById("filtro-dni").value.trim();
+      const apellidoFiltro = document.getElementById("filtro-apellido").value.trim().toLowerCase();
+      const medicoFiltro = document.getElementById("filtro-medico").value;
+
+      return turnosParaFiltrar.filter(t => {
+        const paciente = t.paciente || {};
+        
+        const cumpleDNI = !dniFiltro || t.dni_paciente.includes(dniFiltro);
+        const cumpleApellido = !apellidoFiltro || 
+          (paciente.apellido && paciente.apellido.toLowerCase().includes(apellidoFiltro));
+        const cumpleMedico = !medicoFiltro || t.medico === medicoFiltro;
+        
+        return cumpleDNI && cumpleApellido && cumpleMedico;
+      });
+    }
+    function generarBotones(turno, estado) {
+      if (rolUsuario === 'medico') {
+        if (estado === 'sala de espera') {
+          return `
+            <div class="mt-3 space-x-1">
+              <button onclick='actualizarEstado(${JSON.stringify(turno)}, "llamado")' class="bg-yellow-500 text-white px-2 py-1 text-xs rounded hover:bg-yellow-600">Llamar</button>
+              <button onclick='actualizarEstado(${JSON.stringify(turno)}, "atendido")' class="bg-green-500 text-white px-2 py-1 text-xs rounded hover:bg-green-600">Atendido</button>
+              <button onclick='actualizarEstado(${JSON.stringify(turno)}, "ausente")' class="bg-red-500 text-white px-2 py-1 text-xs rounded hover:bg-red-600">Ausente</button>
+            </div>
+          `;
+        } else if (estado === 'llamado') {
+          return `
+            <div class="mt-3 space-x-1">
+              <button onclick='actualizarEstado(${JSON.stringify(turno)}, "atendido")' class="bg-green-500 text-white px-2 py-1 text-xs rounded hover:bg-green-600">Atendido</button>
+              <button onclick='actualizarEstado(${JSON.stringify(turno)}, "ausente")' class="bg-red-500 text-white px-2 py-1 text-xs rounded hover:bg-red-600">Ausente</button>
+            </div>
+          `;
+        }
+      } else if (rolUsuario === 'secretaria') {
+        let botones = `
+          <div class="mt-3 space-x-1">
+            <button onclick='editarTurnoSecretaria(${JSON.stringify(turno)})' class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600">Editar</button>
+            <button onclick='eliminarTurnoSecretaria(${JSON.stringify(turno)})' class="bg-red-500 text-white px-2 py-1 text-xs rounded hover:bg-red-600">Eliminar</button>
+        `;
+        
+        if (estado === 'sin atender') {
+          botones += `<button onclick='recepcionarPaciente(${JSON.stringify(turno)})' class="bg-green-500 text-white px-2 py-1 text-xs rounded hover:bg-green-600">Recepcionar</button>`;
+        } else if (estado === 'recepcionado') {
+          botones += `<button onclick='moverASalaEspera(${JSON.stringify(turno)})' class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600">Sala Espera</button>`;
+        }
+        
+        botones += `</div>`;
+        return botones;
+      }
+      return '';
     }
 
     async function actualizarEstado(turno, estado) {
@@ -164,13 +263,170 @@
       if (!fechaSeleccionada) return;
       cargarTurnos(t => t.fecha === fechaSeleccionada);
     }
-
-    async function iniciarPagina() {
-      await cargarPacientes();
-      await cargarTurnos();
+    async function editarTurnoSecretaria(turno) {
+      const nuevaHora = prompt('Ingrese la nueva hora (HH:MM):', turno.hora);
+      const nuevaFecha = prompt('Ingrese la nueva fecha (YYYY-MM-DD):', turno.fecha);
+      
+      if ((nuevaHora && nuevaHora !== turno.hora) || (nuevaFecha && nuevaFecha !== turno.fecha)) {
+        try {
+          const data = {};
+          if (nuevaHora && nuevaHora !== turno.hora) data.nueva_hora = nuevaHora;
+          if (nuevaFecha && nuevaFecha !== turno.fecha) data.nueva_fecha = nuevaFecha;
+          
+          const response = await fetch(`/api/turnos/${turno.dni_paciente}/${turno.fecha}/${turno.hora}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok) {
+            alert('Turno actualizado correctamente');
+            cargarTurnos(); // Recargar los datos
+          } else {
+            alert('Error: ' + result.error);
+          }
+        } catch (error) {
+          alert('Error al actualizar el turno: ' + error.message);
+        }
+      }
+    }
+    
+    async function eliminarTurnoSecretaria(turno) {
+      const paciente = turno.paciente || {};
+      const nombrePaciente = `${paciente.nombre || ''} ${paciente.apellido || ''}`.trim();
+      
+      if (confirm(`¿Está seguro de que desea eliminar el turno de ${nombrePaciente || 'DNI: ' + turno.dni_paciente} el ${turno.fecha} a las ${turno.hora}?`)) {
+        try {
+          const response = await fetch(`/api/turnos/${turno.dni_paciente}/${turno.fecha}/${turno.hora}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok) {
+            alert('Turno eliminado correctamente');
+            iniciarPagina(); // Recargar los datos
+          } else {
+            alert('Error: ' + result.error);
+          }
+        } catch (error) {
+          alert('Error al eliminar el turno: ' + error.message);
+        }
+      }
     }
 
-    iniciarPagina();
+    async function recepcionarPaciente(turno) {
+      try {
+        const response = await fetch('/api/turnos/recepcionar', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            dni_paciente: turno.dni_paciente,
+            fecha: turno.fecha,
+            hora: turno.hora
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          alert('Paciente recepcionado correctamente');
+          cargarTurnos();
+        } else {
+          alert('Error: ' + result.error);
+        }
+      } catch (error) {
+        alert('Error al recepcionar paciente: ' + error.message);
+      }
+    }
+
+    async function moverASalaEspera(turno) {
+      const paciente = turno.paciente || {};
+      const nombreCompleto = `${paciente.nombre || ''} ${paciente.apellido || ''}`.trim();
+      const obraSocial = paciente.obra_social || '';
+       
+      // Mostrar información del paciente y solicitar monto
+      const mensajePago = `
+📋 REGISTRAR PAGO
+       
+Paciente: ${nombreCompleto || 'DNI: ' + turno.dni_paciente}
+Obra Social: ${obraSocial}
+Médico: ${turno.medico}
+Fecha: ${turno.fecha} - ${turno.hora}
+ 
+Ingrese el monto a cobrar:
+(Escriba 0 si está cubierto por obra social)`;
+       
+      const montoStr = prompt(mensajePago, '0');
+       
+      if (montoStr === null) return; // Usuario canceló
+       
+      const monto = parseFloat(montoStr);
+      if (isNaN(monto) || monto < 0) {
+        alert('Por favor ingrese un monto válido (puede ser 0)');
+        return;
+      }
+       
+      const observaciones = prompt('Observaciones (opcional):', '') || '';
+      try {
+        const response = await fetch('/api/turnos/sala-espera', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            dni_paciente: turno.dni_paciente,
+            fecha: turno.fecha,
+            hora: turno.hora,
+            monto: monto,
+            observaciones: observaciones
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          if (monto > 0) {
+            alert(`✅ Pago de $${monto} registrado correctamente\n🏥 Paciente movido a sala de espera`);
+          } else {
+            alert(`✅ Consulta cubierta por obra social\n🏥 Paciente movido a sala de espera`);
+          }
+          cargarTurnos();
+        } else {
+          alert('Error: ' + result.error);
+        }
+      } catch (error) {
+        alert('Error al procesar: ' + error.message);
+      }
+    }
+
+    function aplicarFiltros() {
+      cargarTurnos();
+    }
+    function limpiarFiltros() {
+      document.getElementById("filtro-dni").value = "";
+      document.getElementById("filtro-apellido").value = "";
+      document.getElementById("filtro-fecha").value = new Date().toISOString().split('T')[0];
+      document.getElementById("filtro-medico").value = "";
+      cargarTurnos();
+    }
+
+    function filtrarPorFecha() {
+      cargarTurnos();
+    }
+
+    // Inicializar la página
+    document.addEventListener('DOMContentLoaded', cargarDatosIniciales);
+    
   </script>
 </body>
 </html>

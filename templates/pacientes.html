@@ -31,6 +31,10 @@
         <input type="text" id="nombre" placeholder="Nombre" class="input" required>
         <input type="text" id="apellido" placeholder="Apellido" class="input" required>
         <input type="text" id="dni" placeholder="DNI" class="input" required>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="date" id="fecha_nacimiento" class="input" placeholder="Fecha de Nacimiento" required>
+          <input type="text" id="edad" placeholder="Edad" class="input" readonly>
+        </div>
         <input type="text" id="obra_social" placeholder="Obra Social" class="input" required>
         <input type="text" id="numero_obra_social" placeholder="N° Obra Social" class="input" required>
         <input type="text" id="celular" placeholder="Celular" class="input" required>
@@ -38,6 +42,21 @@
         <div class="flex gap-2 mt-4">
           <button type="submit" class="bg-primary text-white px-4 py-2 rounded">Guardar</button>
           <button type="button" onclick="limpiarFormulario()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded">Cancelar</button>
+        </div>
+        <!-- Botones de acción después del registro exitoso -->
+        <div id="acciones-post-registro" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p class="text-green-800 font-semibold mb-3">¡Paciente registrado exitosamente!</p>
+          <div class="flex gap-2 flex-wrap">
+            <button onclick="irAAgenda()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2">
+              📅 Sacar Turno Ahora
+            </button>
+            <button onclick="registrarOtroPaciente()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+              👤 Registrar Otro Paciente
+            </button>
+            <button onclick="verListaPacientes()" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+              📋 Ver Lista de Pacientes
+            </button>
+          </div>
         </div>
       </form>
       <p id="mensaje" class="text-sm text-success mt-2"></p>
@@ -56,6 +75,56 @@
   <a href="/" class="mt-10 block text-center text-primary font-semibold hover:underline">← Volver al inicio</a>
 
   <script>
+    // Variable para almacenar el DNI del último paciente registrado
+    let ultimoPacienteRegistrado = null;
+    // Función para calcular la edad
+    function calcularEdad(fechaNacimiento) {
+      if (!fechaNacimiento) return '';
+      
+      const hoy = new Date();
+      const fechaNac = new Date(fechaNacimiento);
+      let edad = hoy.getFullYear() - fechaNac.getFullYear();
+      const mesActual = hoy.getMonth();
+      const mesNacimiento = fechaNac.getMonth();
+      
+      if (mesActual < mesNacimiento || (mesActual === mesNacimiento && hoy.getDate() < fechaNac.getDate())) {
+        edad--;
+      }
+      
+      return edad >= 0 ? edad : '';
+    }
+    // Función para ir a la agenda con el paciente preseleccionado
+    function irAAgenda() {
+      if (ultimoPacienteRegistrado) {
+        // Redirigir a la agenda con el DNI como parámetro
+        window.location.href = `/agenda?dni=${ultimoPacienteRegistrado}`;
+      } else {
+        window.location.href = '/agenda';
+      }
+    }
+    
+    // Función para registrar otro paciente
+    function registrarOtroPaciente() {
+      limpiarFormulario();
+      document.getElementById('acciones-post-registro').classList.add('hidden');
+    }
+    
+    // Función para ver la lista de pacientes
+    function verListaPacientes() {
+      cargarPacientes();
+      document.getElementById('acciones-post-registro').classList.add('hidden');
+    }
+    // Event listener para calcular edad automáticamente
+    document.addEventListener('DOMContentLoaded', function() {
+      const fechaNacInput = document.getElementById('fecha_nacimiento');
+      const edadInput = document.getElementById('edad');
+      
+      fechaNacInput.addEventListener('change', function() {
+        const edad = calcularEdad(this.value);
+        edadInput.value = edad !== '' ? edad + ' años' : '';
+      });
+    });
+
     async function cargarPacientes() {
       const filtro = document.getElementById("buscar").value.trim().toLowerCase();
       const lista = document.getElementById("lista-pacientes");
@@ -74,7 +143,8 @@
           div.className = "border border-gray-200 p-3 rounded bg-gray-50 shadow-sm";
           div.innerHTML = `
             <p class="font-semibold">${p.nombre} ${p.apellido}</p>
-            <p class="text-sm">DNI: ${p.dni} | Obra Social: ${p.obra_social}</p>
+            <p class="text-sm">DNI: ${p.dni} | ${p.edad ? 'Edad: ' + p.edad : ''}</p>
+            <p class="text-sm">Obra Social: ${p.obra_social} | Celular: ${p.celular}</p>
             <button onclick='editarPaciente(${JSON.stringify(p)})' class="mt-2 text-sm text-primary hover:underline">Editar</button>
           `;
           lista.appendChild(div);
@@ -87,6 +157,8 @@
       document.getElementById("dni").readOnly = true;
       document.getElementById("nombre").value = p.nombre;
       document.getElementById("apellido").value = p.apellido;
+      document.getElementById("fecha_nacimiento").value = p.fecha_nacimiento || '';
+      document.getElementById("edad").value = p.edad || '';
       document.getElementById("obra_social").value = p.obra_social;
       document.getElementById("numero_obra_social").value = p.numero_obra_social;
       document.getElementById("celular").value = p.celular;
@@ -97,18 +169,32 @@
       document.getElementById("form-paciente").reset();
       document.getElementById("dni").readOnly = false;
       document.getElementById("mensaje").innerText = "";
+      document.getElementById('acciones-post-registro').classList.add('hidden');
+      ultimoPacienteRegistrado = null;
     }
 
     document.getElementById("form-paciente").addEventListener("submit", async (e) => {
       e.preventDefault();
+      const fechaNacimiento = document.getElementById("fecha_nacimiento").value;
+      const edad = calcularEdad(fechaNacimiento);
+
       const datos = {
         dni: document.getElementById("dni").value.trim(),
         nombre: document.getElementById("nombre").value.trim(),
         apellido: document.getElementById("apellido").value.trim(),
+        fecha_nacimiento: fechaNacimiento,
+        edad: edad,
         obra_social: document.getElementById("obra_social").value.trim(),
         numero_obra_social: document.getElementById("numero_obra_social").value.trim(),
         celular: document.getElementById("celular").value.trim(),
       };
+
+      // Validar que todos los campos estén completos
+      if (!datos.dni || !datos.nombre || !datos.apellido || !datos.fecha_nacimiento || 
+          !datos.obra_social || !datos.numero_obra_social || !datos.celular) {
+        alert('Por favor complete todos los campos obligatorios');
+        return;
+      }
 
       const metodo = document.getElementById("dni").readOnly ? "PUT" : "POST";
       const url = metodo === "PUT" ? `/api/pacientes/${datos.dni}` : "/api/pacientes";
@@ -126,7 +212,17 @@
         mensaje.classList.remove("text-danger");
         mensaje.classList.add("text-success");
         cargarPacientes();
-        limpiarFormulario();
+        // Si es un nuevo paciente (POST), mostrar opciones post-registro
+        if (metodo === "POST") {
+          ultimoPacienteRegistrado = datos.dni;
+          document.getElementById("form-paciente").reset();
+          document.getElementById("dni").readOnly = false;
+          document.getElementById('acciones-post-registro').classList.remove('hidden');
+        } else {
+          // Si es edición, limpiar normalmente
+          limpiarFormulario();
+        }
+
       } else {
         mensaje.innerText = resultado.error || "Error";
         mensaje.classList.remove("text-success");
@@ -145,6 +241,36 @@
       padding: 0.5rem;
       border: 1px solid #ccc;
       border-radius: 0.375rem;
+    }
+     /* Estilo para los botones de acción post-registro */
+    #acciones-post-registro button {
+      transition: all 0.3s ease;
+      transform: translateY(0);
+    }
+    
+    #acciones-post-registro button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Animación de aparición para el panel post-registro */
+    #acciones-post-registro {
+      animation: slideIn 0.5s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .hidden {
+      display: none !important;
     }
   </style>
 </body>

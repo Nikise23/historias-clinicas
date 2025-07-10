@@ -6,7 +6,8 @@
         "obra_social": "IOMA",
         "numero_obra_social": "21321093109",
         "celular": "1212121234",
-        "fecha_nacimiento": "1993-10-13"
+        "fecha_nacimiento": "1993-10-13",
+        "edad": 31
     },
     {
         "nombre": "Maria Julieta",
@@ -15,7 +16,8 @@
         "obra_social": "swiss medical",
         "numero_obra_social": "1235567898",
         "celular": "1155667788",
-        "fecha_nacimiento": "1996-11-04"
+        "fecha_nacimiento": "1996-11-04",
+        "edad": 28
     },
     {
         "nombre": "Angel  Gabriel",
@@ -24,6 +26,97 @@
         "obra_social": "IOMA",
         "numero_obra_social": "090802930823",
         "celular": "1144556677",
-        "fecha_nacimiento": "1994-03-31"
+        "fecha_nacimiento": "1994-03-31",
+        "edad": 31
+    },
+    {
+        "dni": "40082181",
+        "nombre": "Facundo",
+        "apellido": "Fernandez",
+        "fecha_nacimiento": "1996-11-09",
+        "edad": 28,
+        "obra_social": "OSECAC",
+        "numero_obra_social": "090802930823",
+        "celular": "1234567890"
+    },
+    {
+        "dni": "23232323",
+        "nombre": "Karina Susana",
+        "apellido": "Novarino",
+        "fecha_nacimiento": "1975-02-06",
+        "edad": 50,
+        "obra_social": "IOMA",
+        "numero_obra_social": "1235567898",
+        "celular": "1234567890"
+    },
+    {
+        "dni": "40009987",
+        "nombre": "Matias",
+        "apellido": "Colom",
+        "fecha_nacimiento": "1998-06-01",
+        "edad": 27,
+        "obra_social": "swiss medical",
+        "numero_obra_social": "1235567898",
+        "celular": "1234567890"
+    },
+    {
+        "dni": "12323423",
+        "nombre": "MARIA BELEN",
+        "apellido": "GONZALEZ",
+        "fecha_nacimiento": "1998-03-12",
+        "edad": 27,
+        "obra_social": "ioma",
+        "numero_obra_social": "234565243465",
+        "celular": "123134534545665"
+    },
+    {
+        "dni": "21322434",
+        "nombre": "Angel  Gabriel",
+        "apellido": "Gomez",
+        "fecha_nacimiento": "1995-04-13",
+        "edad": 30,
+        "obra_social": "osde",
+        "numero_obra_social": "12343465576",
+        "celular": "12323423"
+    },
+    {
+        "dni": "2234323",
+        "nombre": "ROCIO GISELLE",
+        "apellido": "FLORES",
+        "fecha_nacimiento": "1998-06-15",
+        "edad": 27,
+        "obra_social": "ioma",
+        "numero_obra_social": "a23445664",
+        "celular": "243423"
+    },
+    {
+        "dni": "234343443|",
+        "nombre": "nicolas",
+        "apellido": "gomez",
+        "fecha_nacimiento": "2000-09-09",
+        "edad": 24,
+        "obra_social": "swiss",
+        "numero_obra_social": "234564564",
+        "celular": "12323425"
+    },
+    {
+        "dni": "46789546",
+        "nombre": "chechno",
+        "apellido": "egel",
+        "fecha_nacimiento": "2001-06-14",
+        "edad": 24,
+        "obra_social": "IOMA",
+        "numero_obra_social": "24356764354654",
+        "celular": "1234353"
+    },
+    {
+        "dni": "1231414",
+        "nombre": "Ernesto",
+        "apellido": "Gomez",
+        "fecha_nacimiento": "1990-03-12",
+        "edad": 35,
+        "obra_social": "IOMA",
+        "numero_obra_social": "2343534644",
+        "celular": "14123423423"
     }
 ]
