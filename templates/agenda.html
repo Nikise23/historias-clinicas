@@ -252,6 +252,26 @@
     function formatearFechaLocal(fechaString) {
       return crearFechaSegura(fechaString).toLocaleDateString('es-ES');
     }
+    
+    // Función centralizada para obtener el día de la semana
+    function obtenerDiaSemana(fechaString) {
+      const fecha = crearFechaSegura(fechaString);
+      const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
+      
+      // Log temporal para debug
+      if (fechaString === '2025-07-10') {
+        console.log('🔍 DEBUG para 2025-07-10:');
+        console.log('fecha creada:', fecha);
+        console.log('getDay():', fecha.getDay());
+        console.log('nombreDia:', diasSemana[fecha.getDay()]);
+      }
+      
+      return {
+        numerodia: fecha.getDay(),
+        nombreDia: diasSemana[fecha.getDay()],
+        fecha: fecha
+      };
+    }
 
     function renderAgenda() {
       const container = document.getElementById("agenda-container");
@@ -296,10 +316,9 @@
         return "<p class='text-muted'>Selecciona una fecha para ver los horarios disponibles</p>";
       }
 
-      // Obtener el día de la semana de la fecha seleccionada - método seguro
-      const fecha = crearFechaSegura(fechaSeleccionada);
-      const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
-      const diaSeleccionado = diasSemana[fecha.getDay()];
+      // Obtener el día de la semana usando función centralizada
+      const infoFecha = obtenerDiaSemana(fechaSeleccionada);
+      const diaSeleccionado = infoFecha.nombreDia;
       
       // Solo mostrar el día seleccionado
       const horas = agenda[medico][diaSeleccionado] || [];
@@ -406,9 +425,9 @@
       fechaSeleccionada = document.getElementById('fecha-agenda').value;
       if (!fechaSeleccionada) return;
       
-      // Verificar si es fin de semana - usando método seguro para evitar problemas de timezone
-      const fecha = crearFechaSegura(fechaSeleccionada);
-      const diaSemana = fecha.getDay(); // 0 = domingo, 6 = sábado
+      // Verificar si es fin de semana usando función centralizada
+      const infoFecha = obtenerDiaSemana(fechaSeleccionada);
+      const diaSemana = infoFecha.numerodia; // 0 = domingo, 6 = sábado
       
       // Eliminar advertencia anterior
       const advertenciaAnterior = document.querySelector('.weekend-warning');
@@ -442,9 +461,9 @@
     function actualizarEstadisticasDia() {
       if (!fechaSeleccionada) return;
       
-      const fecha = crearFechaSegura(fechaSeleccionada);
-      const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
-      const diaSeleccionado = diasSemana[fecha.getDay()];
+      // Obtener el día de la semana usando función centralizada
+      const infoFecha = obtenerDiaSemana(fechaSeleccionada);
+      const diaSeleccionado = infoFecha.nombreDia;
       
       let totalDisponibles = 0;
       let totalOcupados = turnosDelDia.length;
