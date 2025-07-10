@@ -241,6 +241,17 @@
     let turnoActual = { medico: "", hora: "" };
     let fechaSeleccionada = null;
     let turnosDelDia = [];
+    
+    // Función auxiliar para crear fechas sin problemas de timezone
+    function crearFechaSegura(fechaString) {
+      const [year, month, day] = fechaString.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+    
+    // Función auxiliar para formatear fecha a string local
+    function formatearFechaLocal(fechaString) {
+      return crearFechaSegura(fechaString).toLocaleDateString('es-ES');
+    }
 
     function renderAgenda() {
       const container = document.getElementById("agenda-container");
@@ -285,8 +296,8 @@
         return "<p class='text-muted'>Selecciona una fecha para ver los horarios disponibles</p>";
       }
 
-      // Obtener el día de la semana de la fecha seleccionada
-      const fecha = new Date(fechaSeleccionada);
+      // Obtener el día de la semana de la fecha seleccionada - método seguro
+      const fecha = crearFechaSegura(fechaSeleccionada);
       const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
       const diaSeleccionado = diasSemana[fecha.getDay()];
       
@@ -297,7 +308,7 @@
         return `<p class='text-muted'>No hay horarios configurados para ${diaSeleccionado.toLowerCase()}</p>`;
       }
 
-      let html = `<h6 class="mt-3 mb-2 text-primary">${diaSeleccionado} - ${fecha.toLocaleDateString('es-ES')}</h6><div class="mb-3">`;
+      let html = `<h6 class="mt-3 mb-2 text-primary">${diaSeleccionado} - ${formatearFechaLocal(fechaSeleccionada)}</h6><div class="mb-3">`;
       
       let disponibles = 0;
       let ocupados = 0;
@@ -372,7 +383,7 @@
           
           👨‍⚕️ Médico: ${medico}
           ⏰ Hora: ${hora}
-          📅 Fecha: ${new Date(fechaSeleccionada).toLocaleDateString('es-ES')}
+          📅 Fecha: ${formatearFechaLocal(fechaSeleccionada)}
           
           👤 Paciente: ${paciente.nombre} ${paciente.apellido}
           🆔 DNI: ${paciente.dni}
@@ -395,8 +406,8 @@
       fechaSeleccionada = document.getElementById('fecha-agenda').value;
       if (!fechaSeleccionada) return;
       
-      // Verificar si es fin de semana
-      const fecha = new Date(fechaSeleccionada);
+      // Verificar si es fin de semana - usando método seguro para evitar problemas de timezone
+      const fecha = crearFechaSegura(fechaSeleccionada);
       const diaSemana = fecha.getDay(); // 0 = domingo, 6 = sábado
       
       // Eliminar advertencia anterior
@@ -431,7 +442,7 @@
     function actualizarEstadisticasDia() {
       if (!fechaSeleccionada) return;
       
-      const fecha = new Date(fechaSeleccionada);
+      const fecha = crearFechaSegura(fechaSeleccionada);
       const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
       const diaSeleccionado = diasSemana[fecha.getDay()];
       
@@ -465,14 +476,14 @@
         </div>
         <div class="mt-2">
           <small class="text-muted">
-            ${diaSeleccionado} - ${fecha.toLocaleDateString('es-ES')}
+            ${diaSeleccionado} - ${formatearFechaLocal(fechaSeleccionada)}
           </small>
         </div>
       `;
     }
 
     function mostrarModalTurno() {
-      const fechaFormateada = new Date(fechaSeleccionada).toLocaleDateString('es-ES');
+      const fechaFormateada = formatearFechaLocal(fechaSeleccionada);
       
       document.getElementById("info-turno").innerHTML = `
         <strong>Turno para ${turnoActual.medico} a las ${turnoActual.hora}</strong><br>
@@ -581,9 +592,12 @@
       pacientes = await pacientesRes.json();
       turnos = await turnosRes.json();
       
-      // Establecer fecha de hoy por defecto
+      // Establecer fecha de hoy por defecto - usando timezone local
       const hoy = new Date();
-      const fechaHoy = hoy.toISOString().split('T')[0];
+      const year = hoy.getFullYear();
+      const month = String(hoy.getMonth() + 1).padStart(2, '0');
+      const day = String(hoy.getDate()).padStart(2, '0');
+      const fechaHoy = `${year}-${month}-${day}`;
       document.getElementById('fecha-agenda').value = fechaHoy;
       fechaSeleccionada = fechaHoy;
       
