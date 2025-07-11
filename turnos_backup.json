@@ -1,0 +1,90 @@
+[
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17.36",
+        "fecha": "2025-07-08",
+        "dni_paciente": "40009987",
+        "estado": "atendido",
+        "hora_recepcion": "16:32",
+        "hora_sala_espera": "16:33",
+        "pago_registrado": true,
+        "monto_pagado": 10000.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:35",
+        "fecha": "2025-07-08",
+        "dni_paciente": "40022695",
+        "estado": "atendido",
+        "hora_recepcion": "16:33",
+        "hora_sala_espera": "16:33",
+        "pago_registrado": true,
+        "monto_pagado": 15000.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:30",
+        "fecha": "2025-07-08",
+        "dni_paciente": "38099876",
+        "estado": "atendido",
+        "hora_recepcion": "17:01",
+        "hora_sala_espera": "17:01",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Juan Julian",
+        "hora": "14:40",
+        "fecha": "2025-07-11",
+        "dni_paciente": "234343443|",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "09:50",
+        "fecha": "2025-07-10",
+        "dni_paciente": "1231414",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "09:00",
+        "fecha": "2025-07-10",
+        "dni_paciente": "38099876",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "09:10",
+        "fecha": "2025-07-10",
+        "dni_paciente": "40022695",
+        "estado": "sin atender"
+    },
+    {
+        "dni_paciente": "37863139",
+        "medico": "Marianela Bobbiesi",
+        "fecha": "2025-07-11",
+        "hora": "14:05",
+        "estado": "sala de espera",
+        "hora_sala_espera": "14:00"
+    },
+    {
+        "dni_paciente": "40022695",
+        "medico": "Marianela Bobbiesi",
+        "fecha": "2025-07-11",
+        "hora": "14:10",
+        "estado": "llamado",
+        "hora_sala_espera": "14:02",
+        "hora_llamado": "14:08"
+    },
+    {
+        "dni_paciente": "38099876",
+        "medico": "Marianela Bobbiesi",
+        "fecha": "2025-07-11",
+        "hora": "14:15",
+        "estado": "atendido",
+        "hora_sala_espera": "14:05",
+        "hora_llamado": "14:12",
+        "hora_atendido": "14:15"
+    }
+]
