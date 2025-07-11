@@ -21,5 +21,13 @@
         "observaciones": "debe hacerse fondo de ojo",
         "fecha_consulta": "2025-07-03",
         "medico": "Francisco Colom"
+    },
+    {
+        "dni": "37863139",
+        "consulta_medica": "Paciente consulta por dolor de cabeza. Se realiza examen físico normal. Se indica paracetamol 500mg cada 8 horas por 3 días.",
+        "fecha_consulta": "2025-07-11",
+        "medico": "Marianela Bobbiesi",
+        "id": 3,
+        "fecha_creacion": "2025-07-11T01:25:35.279882-03:00"
     }
 ]
