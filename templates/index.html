@@ -179,22 +179,71 @@
 
   <!-- Buscador de historias (solo médico) -->
   <div class="card-panel" id="busqueda-pacientes" style="display:none">
-    <h3>Buscar Historia Clínica</h3>
-    <div class="row g-3 mb-3">
-      <div class="col-md-6">
-        <input id="dni_buscar" class="form-control" placeholder="Buscar por DNI">
+    <div class="card">
+      <div class="card-header bg-info text-white">
+        <h4 class="mb-0"><i class="bi bi-search"></i> Buscar Historia Clínica</h4>
       </div>
-      <div class="col-md-6">
-        <input id="apellido_buscar" class="form-control" placeholder="Buscar por Apellido">
+      <div class="card-body">
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+              <input id="dni_buscar" class="form-control" placeholder="Buscar por DNI" type="number">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person"></i></span>
+              <input id="apellido_buscar" class="form-control" placeholder="Buscar por Apellido">
+            </div>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <button class="btn btn-primary" onclick="buscarPorDNI()">
+            <i class="bi bi-search"></i> Buscar por DNI
+          </button>
+          <button class="btn btn-primary" onclick="buscarPorApellido()">
+            <i class="bi bi-search"></i> Buscar por Apellido
+          </button>
+          <button class="btn btn-success" onclick="cargarHistorias()">
+            <i class="bi bi-list-ul"></i> Cargar todas
+          </button>
+          <button class="btn btn-warning" onclick="limpiarBusqueda()">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar
+          </button>
+        </div>
+        
+        <!-- Estadísticas de búsqueda -->
+        <div class="row mb-3" id="estadisticas-busqueda" style="display: none;">
+          <div class="col-md-4">
+            <div class="card bg-primary text-white text-center">
+              <div class="card-body">
+                <h5 id="total-resultados">0</h5>
+                <small>Resultados encontrados</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-success text-white text-center">
+              <div class="card-body">
+                <h5 id="pacientes-unicos">0</h5>
+                <small>Pacientes únicos</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-info text-white text-center">
+              <div class="card-body">
+                <button class="btn btn-light btn-sm" onclick="descargarResultadosPDF()">
+                  <i class="bi bi-download"></i> Descargar PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-      <button class="btn btn-secondary" onclick="buscarPorDNI()">Buscar por DNI</button>
-      <button class="btn btn-secondary" onclick="buscarPorApellido()">Buscar por Apellido</button>
-      <button class="btn btn-secondary" onclick="cargarHistorias()">Cargar todas</button>
     </div>
   </div>
-
 
   <!-- Resultados de historias -->
   <div id="resultado"></div>
@@ -202,6 +251,8 @@
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 
   <script>
@@ -226,6 +277,7 @@
 
     /* === Dashboard del Médico === */
     let usuarioMedico = null;
+    let historiasResultado = []; // Para almacenar resultados de búsqueda
     
     function cargarDashboardMedico(){
       // Establecer fecha de hoy por defecto
@@ -477,23 +529,118 @@
 
     /* === Historias clínicas === */
     function mostrarHistorias(lista){
-      const res=document.getElementById("resultado");
-      res.innerHTML="";
-      if(!lista.length){
-        res.innerHTML="<div class='alert alert-warning'>No se encontraron historias clínicas.</div>";
+      historiasResultado = lista; // Guardar resultados para PDF
+      const res = document.getElementById("resultado");
+      res.innerHTML = "";
+      
+      // Mostrar estadísticas
+      const estadisticas = document.getElementById("estadisticas-busqueda");
+      if (lista.length > 0) {
+        const pacientesUnicos = new Set(lista.map(h => h.dni)).size;
+        document.getElementById("total-resultados").textContent = lista.length;
+        document.getElementById("pacientes-unicos").textContent = pacientesUnicos;
+        estadisticas.style.display = "block";
+      } else {
+        estadisticas.style.display = "none";
+        res.innerHTML = `
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            No se encontraron historias clínicas.
+          </div>
+        `;
         return;
       }
-      lista.forEach(h=>{
-        const card=document.createElement("div");
-        card.className="card-panel";
-        card.innerHTML=`
-          <strong>${h.nombre}</strong> (DNI ${h.dni})<br>
-          Nac: ${h.fecha_nacimiento||"-"} | Consulta: ${h.fecha_consulta||"-"}<br>
-          <em>Dx:</em> ${h.diagnostico}<br>
-          <em>Tx:</em> ${h.tratamiento||"-"}<br>
-          Obs: ${h.observaciones||"-"}<br>
-          Médico: ${h.medico}`;
-        res.appendChild(card);
+      
+      // Crear contenedor con título
+      const contenedor = document.createElement("div");
+      contenedor.className = "card";
+      contenedor.innerHTML = `
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-file-medical"></i> 
+            Resultados de Búsqueda (${lista.length} historias encontradas)
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row" id="historias-container"></div>
+        </div>
+      `;
+      res.appendChild(contenedor);
+      
+      const historiasContainer = document.getElementById("historias-container");
+      
+      lista.forEach((h, index) => {
+        const fecha = h.fecha_consulta ? new Date(h.fecha_consulta).toLocaleDateString('es-ES') : 'No especificada';
+        const fechaNac = h.fecha_nacimiento ? new Date(h.fecha_nacimiento).toLocaleDateString('es-ES') : 'No especificada';
+        
+        const card = document.createElement("div");
+        card.className = "col-md-6 col-lg-4 mb-3";
+        card.innerHTML = `
+          <div class="card h-100 border-primary">
+            <div class="card-header bg-primary text-white">
+              <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                  <i class="bi bi-person-circle"></i> 
+                  ${h.nombre || 'Sin nombre'} (DNI: ${h.dni})
+                </h6>
+                <button class="btn btn-sm btn-light" onclick="descargarHistoriaIndividual(${index})" title="Descargar PDF">
+                  <i class="bi bi-download"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="row mb-2">
+                <div class="col-6">
+                  <small class="text-muted">Fecha Nac:</small><br>
+                  <strong>${fechaNac}</strong>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">Fecha Consulta:</small><br>
+                  <strong>${fecha}</strong>
+                </div>
+              </div>
+              
+              ${h.diagnostico ? `
+                <div class="mb-2">
+                  <small class="text-muted">Diagnóstico:</small><br>
+                  <strong>${h.diagnostico}</strong>
+                </div>
+              ` : ''}
+              
+              ${h.tratamiento ? `
+                <div class="mb-2">
+                  <small class="text-muted">Tratamiento:</small><br>
+                  <strong>${h.tratamiento}</strong>
+                </div>
+              ` : ''}
+              
+              ${h.observaciones ? `
+                <div class="mb-2">
+                  <small class="text-muted">Observaciones:</small><br>
+                  <em>${h.observaciones}</em>
+                </div>
+              ` : ''}
+              
+              ${h.consulta_medica ? `
+                <div class="mb-2">
+                  <small class="text-muted">Consulta Médica:</small><br>
+                  <em>${h.consulta_medica.substring(0, 100)}${h.consulta_medica.length > 100 ? '...' : ''}</em>
+                </div>
+              ` : ''}
+              
+              <div class="mt-2">
+                <small class="text-muted">Médico:</small><br>
+                <strong>${h.medico || 'No especificado'}</strong>
+              </div>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-sm btn-outline-primary" onclick="verHistoriaCompleta('${h.dni}')">
+                <i class="bi bi-eye"></i> Ver Completa
+              </button>
+            </div>
+          </div>
+        `;
+        historiasContainer.appendChild(card);
       });
     }
 
@@ -526,6 +673,148 @@
           filtradas.length ? mostrarHistorias(filtradas)
                            : alert("No se encontraron coincidencias");
         });
+    }
+
+    function limpiarBusqueda(){
+      document.getElementById("dni_buscar").value = "";
+      document.getElementById("apellido_buscar").value = "";
+      document.getElementById("resultado").innerHTML = "";
+      document.getElementById("estadisticas-busqueda").style.display = "none";
+      historiasResultado = [];
+    }
+
+    function verHistoriaCompleta(dni){
+      window.location.href = `/historias?dni=${dni}`;
+    }
+
+    function descargarHistoriaIndividual(index){
+      const historia = historiasResultado[index];
+      if (!historia) return;
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Configurar fuente y tamaños
+      doc.setFont("helvetica");
+      doc.setFontSize(20);
+      doc.text("Historia Clínica", 105, 20, { align: "center" });
+      
+      doc.setFontSize(12);
+      doc.text("Datos del Paciente:", 20, 40);
+      doc.setFontSize(10);
+      doc.text(`Nombre: ${historia.nombre || 'No especificado'}`, 20, 50);
+      doc.text(`DNI: ${historia.dni}`, 20, 60);
+      doc.text(`Fecha de Nacimiento: ${historia.fecha_nacimiento || 'No especificada'}`, 20, 70);
+      
+      doc.setFontSize(12);
+      doc.text("Datos de la Consulta:", 20, 90);
+      doc.setFontSize(10);
+      
+      const fecha = historia.fecha_consulta ? new Date(historia.fecha_consulta).toLocaleDateString('es-ES') : 'No especificada';
+      doc.text(`Fecha de Consulta: ${fecha}`, 20, 100);
+      doc.text(`Médico: ${historia.medico || 'No especificado'}`, 20, 110);
+      
+      let yPosition = 130;
+      
+      if (historia.diagnostico) {
+        doc.setFontSize(12);
+        doc.text("Diagnóstico:", 20, yPosition);
+        yPosition += 5;
+        doc.setFontSize(10);
+        const dxLines = doc.splitTextToSize(historia.diagnostico, 170);
+        doc.text(dxLines, 20, yPosition);
+        yPosition += dxLines.length * 5 + 5;
+      }
+      
+      if (historia.tratamiento) {
+        doc.setFontSize(12);
+        doc.text("Tratamiento:", 20, yPosition);
+        yPosition += 5;
+        doc.setFontSize(10);
+        const txLines = doc.splitTextToSize(historia.tratamiento, 170);
+        doc.text(txLines, 20, yPosition);
+        yPosition += txLines.length * 5 + 5;
+      }
+      
+      if (historia.observaciones) {
+        doc.setFontSize(12);
+        doc.text("Observaciones:", 20, yPosition);
+        yPosition += 5;
+        doc.setFontSize(10);
+        const obsLines = doc.splitTextToSize(historia.observaciones, 170);
+        doc.text(obsLines, 20, yPosition);
+        yPosition += obsLines.length * 5 + 5;
+      }
+      
+      if (historia.consulta_medica) {
+        doc.setFontSize(12);
+        doc.text("Consulta Médica:", 20, yPosition);
+        yPosition += 5;
+        doc.setFontSize(10);
+        const consultaLines = doc.splitTextToSize(historia.consulta_medica, 170);
+        doc.text(consultaLines, 20, yPosition);
+      }
+      
+      // Guardar PDF
+      const fileName = `historia_${historia.dni}_${fecha.replace(/\//g, '-')}.pdf`;
+      doc.save(fileName);
+    }
+
+    function descargarResultadosPDF(){
+      if (historiasResultado.length === 0) {
+        alert("No hay resultados para descargar");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Título
+      doc.setFont("helvetica");
+      doc.setFontSize(20);
+      doc.text("Reporte de Historias Clínicas", 105, 20, { align: "center" });
+      
+      doc.setFontSize(10);
+      doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 20, 30);
+      doc.text(`Total de historias: ${historiasResultado.length}`, 20, 40);
+      doc.text(`Pacientes únicos: ${new Set(historiasResultado.map(h => h.dni)).size}`, 20, 50);
+      
+      // Historial de consultas
+      let yPosition = 70;
+      doc.setFontSize(14);
+      doc.text("Historias Clínicas:", 20, yPosition);
+      yPosition += 10;
+      
+      historiasResultado.forEach((historia, index) => {
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        const fecha = historia.fecha_consulta ? new Date(historia.fecha_consulta).toLocaleDateString('es-ES') : 'No especificada';
+        doc.setFontSize(12);
+        doc.text(`${index + 1}. ${historia.nombre || 'Sin nombre'} (DNI: ${historia.dni}) - ${fecha}`, 20, yPosition);
+        yPosition += 5;
+        doc.setFontSize(10);
+        doc.text(`Médico: ${historia.medico || 'No especificado'}`, 20, yPosition);
+        yPosition += 5;
+        
+        if (historia.diagnostico) {
+          doc.text(`Diagnóstico: ${historia.diagnostico}`, 20, yPosition);
+          yPosition += 5;
+        }
+        
+        if (historia.tratamiento) {
+          doc.text(`Tratamiento: ${historia.tratamiento}`, 20, yPosition);
+          yPosition += 5;
+        }
+        
+        yPosition += 5; // Espacio entre historias
+      });
+      
+      // Guardar PDF
+      const fileName = `reporte_historias_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
     }
 
     /* === Modal para crear historia clínica === */
