@@ -981,7 +981,34 @@
           doc.addPage();
           yPosition = 20;
         }
-        
         const fecha = historia.fecha_consulta ? new Date(historia.fecha_consulta).toLocaleDateString('es-ES') : 'No especificada';
         doc.setFontSize(12);
-        doc.text(`
+        doc.text(`${index + 1}. ${historia.nombre || 'Sin nombre'} (DNI: ${historia.dni}) - ${fecha}`, 20, yPosition);
+        yPosition += 5;
+        doc.setFontSize(10);
+        doc.text(`Médico: ${historia.medico || 'No especificado'}`, 20, yPosition);
+        yPosition += 5;
+        if (historia.diagnostico) {
+          doc.text(`Diagnóstico: ${historia.diagnostico}`, 20, yPosition);
+          yPosition += 5;
+        }
+        if (historia.tratamiento) {
+          doc.text(`Tratamiento: ${historia.tratamiento}`, 20, yPosition);
+          yPosition += 5;
+        }
+        yPosition += 5; // Espacio entre historias
+      });
+      // Guardar PDF
+      const fileName = `reporte_historias_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+    }
+    /* === Modal para crear historia clínica === */
+    function abrirModalHistoriaClinica() {
+      const dni = prompt("Ingrese el DNI del paciente para crear la historia clínica:");
+      if (dni && dni.trim()) {
+        window.location.href = `/historias?dni=${dni.trim()}`;
+      }
+    }
+  </script>
+</body>
+</html>
