@@ -251,6 +251,18 @@
     function formatearFechaLocal(fechaString) {
       return crearFechaSegura(fechaString).toLocaleDateString('es-ES');
     }
+
+    // Función para obtener la fecha actual en zona horaria de Argentina
+    function obtenerFechaArgentina() {
+      const hoy = new Date();
+      // Ajustar a zona horaria de Argentina (UTC-3)
+      const offsetArgentina = -3 * 60; // -3 horas en minutos
+      const fechaArgentina = new Date(hoy.getTime() + (offsetArgentina * 60 * 1000));
+      const year = fechaArgentina.getUTCFullYear();
+      const month = String(fechaArgentina.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(fechaArgentina.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
     
     // Función centralizada para obtener el día de la semana
     function obtenerDiaSemana(fechaString) {
@@ -603,39 +615,45 @@
     }
 
     async function init() {
-      const [agendaRes, pacientesRes, turnosRes] = await Promise.all([
-        fetch("/api/agenda"), fetch("/api/pacientes"), fetch("/api/turnos")
-      ]);
-      agenda = await agendaRes.json();
-      pacientes = await pacientesRes.json();
-      turnos = await turnosRes.json();
-      
-      // Establecer fecha de hoy por defecto - usando timezone local
-      const hoy = new Date();
-      const year = hoy.getFullYear();
-      const month = String(hoy.getMonth() + 1).padStart(2, '0');
-      const day = String(hoy.getDate()).padStart(2, '0');
-      const fechaHoy = `${year}-${month}-${day}`;
-      document.getElementById('fecha-agenda').value = fechaHoy;
-      fechaSeleccionada = fechaHoy;
-      
-      // Filtrar turnos para hoy
-      turnosDelDia = turnos.filter(t => t.fecha === fechaSeleccionada);
-      
-      // Actualizar estadísticas y renderizar
-      actualizarEstadisticasDia();
-      renderAgenda();
-      
-      // Mostrar mensaje si viene desde registro de paciente
-      const urlParams = new URLSearchParams(window.location.search);
-      const dniDesdeRegistro = urlParams.get('dni');
-      if (dniDesdeRegistro) {
-        const paciente = pacientes.find(p => p.dni === dniDesdeRegistro);
-        if (paciente) {
-          document.getElementById('mensaje-paciente').textContent = 
-            `El paciente ${paciente.nombre} ${paciente.apellido} (DNI: ${paciente.dni}) ha sido registrado exitosamente.`;
-          document.getElementById('mensaje-desde-registro').classList.remove('d-none');
+      try {
+        const [agendaRes, pacientesRes, turnosRes] = await Promise.all([
+          fetch("/api/agenda"), fetch("/api/pacientes"), fetch("/api/turnos")
+        ]);
+        
+        if (!agendaRes.ok) {
+          throw new Error(`Error al cargar agenda: ${agendaRes.status}`);
         }
+        
+        agenda = await agendaRes.json();
+        pacientes = await pacientesRes.json();
+        turnos = await turnosRes.json();
+        
+        // Establecer fecha de hoy por defecto - usando timezone de Argentina
+        const fechaHoy = obtenerFechaArgentina();
+        document.getElementById('fecha-agenda').value = fechaHoy;
+        fechaSeleccionada = fechaHoy;
+      
+              // Filtrar turnos para hoy
+        turnosDelDia = turnos.filter(t => t.fecha === fechaSeleccionada);
+        
+        // Actualizar estadísticas y renderizar
+        actualizarEstadisticasDia();
+        renderAgenda();
+        
+        // Mostrar mensaje si viene desde registro de paciente
+        const urlParams = new URLSearchParams(window.location.search);
+        const dniDesdeRegistro = urlParams.get('dni');
+        if (dniDesdeRegistro) {
+          const paciente = pacientes.find(p => p.dni === dniDesdeRegistro);
+          if (paciente) {
+            document.getElementById('mensaje-paciente').textContent = 
+              `El paciente ${paciente.nombre} ${paciente.apellido} (DNI: ${paciente.dni}) ha sido registrado exitosamente.`;
+            document.getElementById('mensaje-desde-registro').classList.remove('d-none');
+          }
+        }
+      } catch (error) {
+        console.error('Error al inicializar la agenda:', error);
+        alert('Error al cargar la agenda: ' + error.message);
       }
     }
 

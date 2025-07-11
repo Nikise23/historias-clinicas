@@ -4,12 +4,16 @@ import os
 import csv
 import io
 from functools import wraps
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "clave_insegura_dev")
+
+# Configurar zona horaria para Argentina (UTC-3)
+import pytz
+timezone_ar = pytz.timezone('America/Argentina/Buenos_Aires')
 
 
 DATA_FILE = "historias_clinicas.json"
@@ -60,7 +64,8 @@ def validar_historia(data):
         if fecha:
             try:
                 f = datetime.strptime(fecha, "%Y-%m-%d")
-                if f > datetime.now():
+                ahora = datetime.now(timezone_ar)
+                if f > ahora:
                     return False, f"La fecha '{campo}' no puede ser futura."
             except ValueError:
                 return False, f"Formato de fecha inválido en '{campo}'."
@@ -469,7 +474,12 @@ def ver_agenda():
 @login_requerido
 @rol_requerido("secretaria")
 def obtener_agenda():
-    return jsonify(cargar_json(AGENDA_FILE))
+    try:
+        agenda_data = cargar_json(AGENDA_FILE)
+        return jsonify(agenda_data)
+    except Exception as e:
+        print(f"Error al cargar agenda: {e}")
+        return jsonify({"error": "Error al cargar la agenda"}), 500
 
 
 @app.route("/api/agenda/<medico>/<dia>", methods=["PUT"])
@@ -605,7 +615,7 @@ def registrar_pago():
         "nombre_paciente": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
         "monto": monto,
         "fecha": data["fecha"],
-        "fecha_registro": datetime.now().isoformat(),
+        "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": data.get("observaciones", ""),
         "obra_social": paciente.get("obra_social", "")
     }
@@ -816,7 +826,7 @@ def recepcionar_paciente():
             turno["hora"] == hora):
             
             turno["estado"] = "recepcionado"
-            turno["hora_recepcion"] = datetime.now().strftime("%H:%M")
+            turno["hora_recepcion"] = datetime.now(timezone_ar).strftime("%H:%M")
             
             guardar_json(TURNOS_FILE, turnos)
             return jsonify({"mensaje": "Paciente recepcionado correctamente"})
@@ -886,7 +896,7 @@ def mover_a_sala_espera():
         "nombre_paciente": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
         "monto": monto,
         "fecha": fecha,
-        "fecha_registro": datetime.now().isoformat(),
+        "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": observaciones,
         "obra_social": paciente.get("obra_social", "")
     }
@@ -895,7 +905,7 @@ def mover_a_sala_espera():
     guardar_json(PAGOS_FILE, pagos)
     # Mover a sala de espera
     turno_encontrado["estado"] = "sala de espera"
-    turno_encontrado["hora_sala_espera"] = datetime.now().strftime("%H:%M")
+    turno_encontrado["hora_sala_espera"] = datetime.now(timezone_ar).strftime("%H:%M")
     turno_encontrado["pago_registrado"] = True
     turno_encontrado["monto_pagado"] = monto
      
@@ -962,7 +972,7 @@ def cobrar_y_mover_a_sala():
         "nombre_paciente": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
         "monto": monto,
         "fecha": fecha,
-        "fecha_registro": datetime.now().isoformat(),
+        "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": observaciones,
         "obra_social": paciente.get("obra_social", "")
     }
@@ -972,7 +982,7 @@ def cobrar_y_mover_a_sala():
     
     # Mover a sala de espera
     turno_encontrado["estado"] = "sala de espera"
-    turno_encontrado["hora_sala_espera"] = datetime.now().strftime("%H:%M")
+    turno_encontrado["hora_sala_espera"] = datetime.now(timezone_ar).strftime("%H:%M")
     turno_encontrado["pago_registrado"] = True
     turno_encontrado["monto_pagado"] = monto
     
