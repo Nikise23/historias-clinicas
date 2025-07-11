@@ -73,51 +73,91 @@
         </a>
       </div>
     </div>
-    <!-- Médico -->
+        <!-- Médico -->
     <div id="botones-medico"
-         class="row row-cols-1 row-cols-md-2 g-3" style="display:none">
+         class="row row-cols-1 row-cols-md-3 g-3" style="display:none">
       <div class="col">
         <a href="/turnos" class="btn btn-outline-info btn-action">
-          <i class="bi bi-clipboard-check"></i> Turnos Asignados
+          <i class="bi bi-clipboard-check"></i> Gestión de Pacientes
         </a>
       </div>
       <div class="col">
-        <a href="/agenda" class="btn btn-outline-primary btn-action">
-          <i class="bi bi-calendar-week"></i> Administrar Agenda
+        <a href="#" onclick="mostrarMiAgenda()" class="btn btn-outline-primary btn-action">
+          <i class="bi bi-calendar-week"></i> Ver Mi Agenda
+        </a>
+      </div>
+      <div class="col">
+        <a href="/historias?dni=" class="btn btn-outline-success btn-action">
+          <i class="bi bi-file-medical"></i> Crear Historia Clínica
         </a>
       </div>
     </div>
   </div>
 
-  <!-- Resumen y tabla (solo médico) -->
-  <div class="card-panel" id="resumen-medico" style="display:none">
-    <h4>Resumen del día</h4>
-    <ul class="list-group mb-4">
-      <li class="list-group-item d-flex justify-content-between">
-        Turnos pendientes
-        <span class="badge bg-warning text-dark fs-6" id="turnos-pendientes">0</span>
-      </li>
-      <li class="list-group-item d-flex justify-content-between">
-        Pacientes atendidos
-        <span class="badge bg-success fs-6" id="pacientes-atendidos">0</span>
-      </li>
-    </ul>
-
-    <!-- Tabla detalle -->
-    <div id="tabla-turnos" style="display:none">
-      <h5 class="mb-3">Detalle de turnos de hoy</h5>
-      <div class="table-responsive">
-        <table class="table table-sm table-bordered align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>Fecha</th><th>Hora</th><th>Paciente</th>
-              <th>DNI</th><th>Estado</th>
-            </tr>
-          </thead>
-          <tbody id="tabla-turnos-body"></tbody>
-        </table>
+  <!-- Dashboard del Médico -->
+  <div class="card-panel" id="dashboard-medico" style="display:none">
+    
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card bg-primary text-white">
+          <div class="card-body text-center">
+            <i class="bi bi-clock-history fs-2"></i>
+            <h4 id="turnos-pendientes" class="mt-2">0</h4>
+            <small>Pendientes Hoy</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+          <div class="card-body text-center">
+            <i class="bi bi-people-fill fs-2"></i>
+            <h4 id="en-sala-espera" class="mt-2">0</h4>
+            <small>En Sala de Espera</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-success text-white">
+          <div class="card-body text-center">
+            <i class="bi bi-check-circle-fill fs-2"></i>
+            <h4 id="pacientes-atendidos" class="mt-2">0</h4>
+            <small>Atendidos Hoy</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-info text-white">
+          <div class="card-body text-center">
+            <i class="bi bi-calendar-week fs-2"></i>
+            <h4 id="total-turnos-hoy" class="mt-2">0</h4>
+            <small>Total Turnos Hoy</small>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Selector de Fecha para Agenda -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <h5><i class="bi bi-calendar3"></i> Mi Agenda</h5>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+          <input type="date" id="fecha-agenda-medico" class="form-control" onchange="cargarAgendaMedico()">
+          <button class="btn btn-outline-secondary" onclick="cargarAgendaHoy()">Hoy</button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h5><i class="bi bi-clock"></i> Próximos Turnos</h5>
+        <div id="proximos-turnos" class="small"></div>
+      </div>
+    </div>
+
+    <!-- Agenda del Día -->
+    <div id="agenda-medico-container">
+      <h6 class="text-muted">Selecciona una fecha para ver tu agenda</h6>
+    </div>
+
   </div>
 
   <!-- Buscador de historias (solo médico) -->
@@ -157,48 +197,227 @@
         }else if(rol==="medico"){
           document.getElementById("botones-medico").style.display="flex";
           document.getElementById("busqueda-pacientes").style.display="block";
-          document.getElementById("resumen-medico").style.display="block";
-          cargarResumenDelDia();          // <- resumen + tabla
+          document.getElementById("dashboard-medico").style.display="block";
+          cargarDashboardMedico();          // <- nuevo dashboard mejorado
         }
       });
 
-    /* === Resumen y tabla === */
-    function cargarResumenDelDia(){
-      const hoy=new Date().toISOString().slice(0,10);      // yyyy-mm-dd
-      fetch("/api/turnos/medico")                           // solo turnos del médico
-        .then(r=>r.json())
-        .then(turnos=>{
-          const turnosHoy=turnos.filter(t=>t.fecha===hoy);
-
-          const pendientes=turnosHoy.filter(t=>["sin atender","llamado"].includes(t.estado)).length;
-          const atendidos=turnosHoy.filter(t=>t.estado==="atendido").length;
-
-          document.getElementById("turnos-pendientes").textContent=pendientes;
-          document.getElementById("pacientes-atendidos").textContent=atendidos;
-
-          /* ---- tabla ---- */
-          const tabla=document.getElementById("tabla-turnos");
-          const tbody=document.getElementById("tabla-turnos-body");
-          tbody.innerHTML="";
-          if(turnosHoy.length===0){
-            tabla.style.display="none";
+    /* === Dashboard del Médico === */
+    let usuarioMedico = null;
+    
+    function cargarDashboardMedico(){
+      // Establecer fecha de hoy por defecto
+      const hoy = new Date().toISOString().slice(0, 10);
+      document.getElementById("fecha-agenda-medico").value = hoy;
+      
+      // Cargar estadísticas del día
+      cargarEstadisticasMedico();
+      
+      // Cargar agenda de hoy
+      cargarAgendaMedico();
+      
+      // Cargar próximos turnos
+      cargarProximosTurnos();
+    }
+    
+    function cargarEstadisticasMedico(){
+      const hoy = new Date().toISOString().slice(0, 10);
+      fetch("/api/turnos/medico")
+        .then(r => r.json())
+        .then(turnos => {
+          const turnosHoy = turnos.filter(t => t.fecha === hoy);
+          
+          const pendientes = turnosHoy.filter(t => ["sin atender", "recepcionado"].includes(t.estado)).length;
+          const enSala = turnosHoy.filter(t => ["sala de espera", "llamado"].includes(t.estado)).length;
+          const atendidos = turnosHoy.filter(t => t.estado === "atendido").length;
+          const total = turnosHoy.length;
+          
+          document.getElementById("turnos-pendientes").textContent = pendientes;
+          document.getElementById("en-sala-espera").textContent = enSala;
+          document.getElementById("pacientes-atendidos").textContent = atendidos;
+          document.getElementById("total-turnos-hoy").textContent = total;
+        })
+        .catch(console.error);
+    }
+    
+    function cargarAgendaHoy(){
+      const hoy = new Date().toISOString().slice(0, 10);
+      document.getElementById("fecha-agenda-medico").value = hoy;
+      cargarAgendaMedico();
+    }
+    
+    function cargarAgendaMedico(){
+      const fechaSeleccionada = document.getElementById("fecha-agenda-medico").value;
+      if (!fechaSeleccionada) return;
+      
+      const container = document.getElementById("agenda-medico-container");
+      
+      // Obtener información del usuario si no la tenemos
+      if (!usuarioMedico) {
+        fetch("/api/session-info")
+          .then(r => r.json())
+          .then(({usuario}) => {
+            usuarioMedico = usuario;
+            renderizarAgendaMedico(fechaSeleccionada, container);
+          });
+      } else {
+        renderizarAgendaMedico(fechaSeleccionada, container);
+      }
+    }
+    
+    function renderizarAgendaMedico(fecha, container){
+      Promise.all([
+        fetch("/api/agenda"),
+        fetch(`/api/turnos/dia?fecha=${fecha}`)
+      ])
+      .then(([agendaRes, turnosRes]) => Promise.all([agendaRes.json(), turnosRes.json()]))
+      .then(([agenda, turnos]) => {
+        const fechaObj = new Date(fecha + 'T12:00:00');
+        const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
+        const diaSeleccionado = diasSemana[fechaObj.getDay()];
+        
+        // Filtrar turnos del médico
+        const turnosMedico = turnos.filter(t => t.medico === usuarioMedico);
+        
+        // Obtener horarios configurados para este médico en este día
+        const horariosConfigurados = agenda[usuarioMedico]?.[diaSeleccionado] || [];
+        
+        if (horariosConfigurados.length === 0) {
+          container.innerHTML = `
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle"></i> 
+              No tienes horarios configurados para ${diaSeleccionado.toLowerCase()} (${new Date(fecha).toLocaleDateString('es-ES')})
+            </div>
+          `;
+          return;
+        }
+        
+        let html = `
+          <h6><i class="bi bi-calendar-day"></i> ${diaSeleccionado} - ${new Date(fecha).toLocaleDateString('es-ES')}</h6>
+          <div class="row">
+        `;
+        
+        horariosConfigurados.forEach(hora => {
+          const turno = turnosMedico.find(t => t.hora === hora);
+          
+          if (turno) {
+            // Horario ocupado
+            const paciente = turno.paciente || {};
+            const nombrePaciente = `${paciente.nombre || ''} ${paciente.apellido || ''}`.trim() || `DNI: ${turno.dni_paciente}`;
+            const estadoColor = {
+              'sin atender': 'warning',
+              'recepcionado': 'info',
+              'sala de espera': 'primary',
+              'llamado': 'secondary',
+              'atendido': 'success',
+              'ausente': 'danger'
+            }[turno.estado] || 'secondary';
+            
+            const estadoEmoji = {
+              'sin atender': '⏳',
+              'recepcionado': '📋',
+              'sala de espera': '🪑',
+              'llamado': '📢',
+              'atendido': '✅',
+              'ausente': '❌'
+            }[turno.estado] || '⏳';
+            
+            html += `
+              <div class="col-md-4 mb-3">
+                <div class="card border-${estadoColor}">
+                  <div class="card-body text-center">
+                    <h6 class="card-title">${hora}</h6>
+                    <div class="text-${estadoColor} mb-2">${estadoEmoji}</div>
+                    <p class="card-text small">
+                      <strong>${nombrePaciente}</strong><br>
+                      <span class="badge bg-${estadoColor}">${turno.estado}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `;
+          } else {
+            // Horario libre
+            html += `
+              <div class="col-md-4 mb-3">
+                <div class="card border-light bg-light">
+                  <div class="card-body text-center">
+                    <h6 class="card-title">${hora}</h6>
+                    <div class="text-muted mb-2">⭕</div>
+                    <p class="card-text small text-muted">
+                      <em>Libre</em>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+      })
+      .catch(error => {
+        container.innerHTML = `
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> 
+            Error al cargar la agenda: ${error.message}
+          </div>
+        `;
+      });
+    }
+    
+    function cargarProximosTurnos(){
+      fetch("/api/turnos/medico")
+        .then(r => r.json())
+        .then(turnos => {
+          const ahora = new Date();
+          const proximosTurnos = turnos
+            .filter(t => {
+              const fechaTurno = new Date(`${t.fecha}T${t.hora}`);
+              return fechaTurno > ahora && ['sin atender', 'recepcionado', 'sala de espera'].includes(t.estado);
+            })
+            .sort((a, b) => new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`))
+            .slice(0, 3);
+            
+          const container = document.getElementById("proximos-turnos");
+          
+          if (proximosTurnos.length === 0) {
+            container.innerHTML = '<em class="text-muted">No hay turnos próximos</em>';
             return;
           }
-          turnosHoy
-            .sort((a,b)=> new Date(`${a.fecha} ${a.hora}`)-new Date(`${b.fecha} ${b.hora}`))
-            .forEach(t=>{
-              const tr=document.createElement("tr");
-              tr.innerHTML=`
-                <td>${t.fecha}</td>
-                <td>${t.hora}</td>
-                <td>${t.paciente?.nombre||""} ${t.paciente?.apellido||""}</td>
-                <td>${t.dni_paciente}</td>
-                <td>${t.estado}</td>`;
-              tbody.appendChild(tr);
-            });
-          tabla.style.display="block";
+          
+          let html = '';
+          proximosTurnos.forEach(t => {
+            const paciente = t.paciente || {};
+            const nombrePaciente = `${paciente.nombre || ''} ${paciente.apellido || ''}`.trim() || `DNI: ${t.dni_paciente}`;
+            html += `
+              <div class="border-bottom pb-1 mb-1">
+                <strong>${t.fecha} ${t.hora}</strong><br>
+                <span class="text-muted">${nombrePaciente}</span>
+              </div>
+            `;
+          });
+          
+          container.innerHTML = html;
         })
-        .catch(()=>document.getElementById("tabla-turnos").style.display="none");
+        .catch(() => {
+          document.getElementById("proximos-turnos").innerHTML = '<em class="text-muted">Error al cargar próximos turnos</em>';
+        });
+    }
+    
+    function mostrarMiAgenda(){
+      const fechaActual = document.getElementById("fecha-agenda-medico").value;
+      if (fechaActual) {
+        cargarAgendaMedico();
+      } else {
+        cargarAgendaHoy();
+      }
+      
+      // Hacer scroll suave hacia la agenda
+      document.getElementById("agenda-medico-container").scrollIntoView({ 
+        behavior: 'smooth' 
+      });
     }
 
     /* === Historias clínicas === */

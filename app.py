@@ -422,7 +422,11 @@ def actualizar_estado_turno():
 @login_requerido
 @rol_permitido(["secretaria", "medico"])
 def ver_turnos():
-    return render_template("pacientes_turnos.html")
+    # Redirigir según el rol
+    if session.get("rol") == "medico":
+        return render_template("turnos_medico.html")
+    else:
+        return render_template("pacientes_turnos.html")
 
 
 @app.route("/turnos/gestion")
