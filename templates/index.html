@@ -281,7 +281,7 @@
     
     function cargarDashboardMedico(){
       // Establecer fecha de hoy por defecto
-      const hoy = new Date().toISOString().slice(0, 10);
+      const hoy = new Date().toLocaleDateString('en-CA'); // formato YYYY-MM-DD en zona local
       document.getElementById("fecha-agenda-medico").value = hoy;
       
       // Cargar estadísticas del día
@@ -295,7 +295,7 @@
     }
     
     function cargarEstadisticasMedico(){
-      const hoy = new Date().toISOString().slice(0, 10);
+      const hoy = new Date().toLocaleDateString('en-CA'); // formato YYYY-MM-DD en zona local
       fetch("/api/turnos/medico")
         .then(r => r.json())
         .then(turnos => {
@@ -314,7 +314,7 @@
         .catch(console.error);
     }
     function cargarAgendaHoy(){
-      const hoy = new Date().toISOString().slice(0, 10);
+      const hoy = new Date().toLocaleDateString('en-CA'); // formato YYYY-MM-DD en zona local
       document.getElementById("fecha-agenda-medico").value = hoy;
       cargarAgendaMedico();
     }
