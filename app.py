@@ -187,13 +187,14 @@ def crear_historia():
         return jsonify({"error": mensaje}), 400
 
 
-    if any(h["dni"] == nueva["dni"] for h in historias):
-        return jsonify({"error": "Ya existe una historia con ese DNI"}), 400
+    # Agregar ID único para la consulta
+    nueva["id"] = len(historias) + 1
+    nueva["fecha_creacion"] = datetime.now(timezone_ar).isoformat()
 
 
     historias.append(nueva)
     guardar_json(DATA_FILE, historias)
-    return jsonify({"mensaje": "Historia creada"}), 201
+    return jsonify({"mensaje": "Consulta registrada correctamente"}), 201
 
 
 @app.route("/historias/<dni>", methods=["GET", "PUT", "DELETE"])
