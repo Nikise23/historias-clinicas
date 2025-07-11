@@ -1019,6 +1019,29 @@ def obtener_turnos_dia():
     
     return jsonify(turnos_dia)
 
+@app.route('/api/turnos/limpiar-vencidos', methods=['POST'])
+@login_requerido
+@rol_requerido('secretaria')
+def limpiar_turnos_vencidos():
+    from datetime import datetime, timedelta
+    turnos = cargar_json(TURNOS_FILE)
+    ahora = datetime.now()
+    nuevos = []
+    eliminados = 0
+    for t in turnos:
+        fecha_hora_str = f"{t.get('fecha', '')} {t.get('hora', '00:00')}"
+        try:
+            fecha_hora = datetime.strptime(fecha_hora_str, "%Y-%m-%d %H:%M")
+        except Exception:
+            nuevos.append(t)
+            continue
+        if t.get('estado', '').lower() == 'sin atender' and fecha_hora < ahora - timedelta(hours=24):
+            eliminados += 1
+        else:
+            nuevos.append(t)
+    guardar_json(TURNOS_FILE, nuevos)
+    return jsonify({"eliminados": eliminados, "ok": True})
+
 # ====================================================
 
 
