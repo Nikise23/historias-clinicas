@@ -20,91 +20,107 @@
     };
   </script>
 </head>
-<body class="bg-gray-100 text-gray-800 p-6">
-  <h1 class="text-3xl font-bold text-center text-primary mb-6">Gestión de Pacientes</h1>
-
-  <div class="grid md:grid-cols-2 gap-6">
-    <!-- Formulario de registro / modificación -->
-    <div class="bg-white shadow rounded-lg p-4">
-      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2" id="form-title">
-        <span class="inline-block bg-primary text-white rounded-full p-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg></span>
-        Registrar Paciente
-      </h2>
-      <form id="form-paciente" class="space-y-3">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="relative">
-            <input type="text" id="nombre" placeholder="Nombre *" class="input pl-10" required autocomplete="off">
-            <span class="absolute left-3 top-2.5 text-primary"><i class="bi bi-person"></i></span>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-7 col-md-9">
+        <div class="card shadow-lg border-0">
+          <div class="card-header bg-white border-bottom-0 text-center py-4">
+            <h2 class="mb-0 text-primary fw-bold d-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-person-plus fs-2"></i> Registrar Paciente
+            </h2>
+            <p class="text-muted mb-0">Complete los datos obligatorios para registrar un nuevo paciente</p>
           </div>
-          <div class="relative">
-            <input type="text" id="apellido" placeholder="Apellido *" class="input pl-10" required autocomplete="off">
-            <span class="absolute left-3 top-2.5 text-primary"><i class="bi bi-person"></i></span>
+          <div class="card-body p-4">
+            <form id="form-paciente" autocomplete="off">
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label for="nombre" class="form-label">Nombre *</label>
+                  <input type="text" id="nombre" class="form-control" required autocomplete="off">
+                </div>
+                <div class="col-md-6">
+                  <label for="apellido" class="form-label">Apellido *</label>
+                  <input type="text" id="apellido" class="form-control" required autocomplete="off">
+                </div>
+                <div class="col-md-6">
+                  <label for="dni" class="form-label">DNI *</label>
+                  <input type="text" id="dni" class="form-control" required maxlength="10" autocomplete="off">
+                </div>
+                <div class="col-md-6">
+                  <label for="celular" class="form-label">Celular *</label>
+                  <input type="text" id="celular" class="form-control" required maxlength="20" autocomplete="off">
+                </div>
+                <div class="col-md-6">
+                  <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento *</label>
+                  <input type="date" id="fecha_nacimiento" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="edad" class="form-label">Edad</label>
+                  <input type="text" id="edad" class="form-control bg-light" readonly>
+                </div>
+                <div class="col-md-6">
+                  <label for="obra_social" class="form-label">Obra Social *</label>
+                  <input type="text" id="obra_social" class="form-control" required autocomplete="off">
+                </div>
+                <div class="col-md-6">
+                  <label for="numero_obra_social" class="form-label">N° Obra Social *</label>
+                  <input type="text" id="numero_obra_social" class="form-control" required autocomplete="off">
+                </div>
+              </div>
+              <div class="text-muted small mb-3">* Campos obligatorios</div>
+              <div class="d-flex gap-2 mb-3">
+                <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                  <i class="bi bi-person-plus"></i> Guardar
+                </button>
+                <button type="button" onclick="limpiarFormulario()" class="btn btn-outline-secondary px-4 fw-semibold">
+                  <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+              </div>
+              <div id="mensaje" class="mt-2"></div>
+              <div id="acciones-post-registro" class="alert alert-success d-none mt-4">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="bi bi-check-circle-fill fs-4"></i>
+                  <span class="fw-bold">¡Paciente registrado exitosamente!</span>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                  <button onclick="irAAgenda()" class="btn btn-outline-primary">
+                    <i class="bi bi-calendar-event"></i> Sacar Turno Ahora
+                  </button>
+                  <button onclick="registrarOtroPaciente()" class="btn btn-outline-success">
+                    <i class="bi bi-person-plus"></i> Registrar Otro Paciente
+                  </button>
+                  <button onclick="verListaPacientes()" class="btn btn-outline-secondary">
+                    <i class="bi bi-list-ul"></i> Ver Lista de Pacientes
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
-        <div class="relative">
-          <input type="text" id="dni" placeholder="DNI *" class="input pl-10" required autocomplete="off" maxlength="10">
-          <span class="absolute left-3 top-2.5 text-primary"><i class="bi bi-credit-card-2-front"></i></span>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="relative">
-            <input type="date" id="fecha_nacimiento" class="input pl-10" placeholder="Fecha de Nacimiento *" required>
-            <span class="absolute left-3 top-2.5 text-primary"><i class="bi bi-calendar"></i></span>
-          </div>
-          <div class="relative">
-            <input type="text" id="edad" placeholder="Edad" class="input pl-10 bg-gray-100" readonly>
-            <span class="absolute left-3 top-2.5 text-primary"><i class="bi bi-hourglass"></i></span>
-          </div>
-        </div>
-        <div class="relative">
-          <input type="text" id="obra_social" placeholder="Obra Social *" class="input pl-10" required autocomplete="off">
-          <span class="absolute left-3 top-2.5 text-primary"><i class="bi bi-hospital"></i></span>
-        </div>
-        <div class="relative">
-          <input type="text" id="numero_obra_social" placeholder="N° Obra Social *" class="input pl-10" required autocomplete="off">
-          <span class="absolute left-3 top-2.5 text-primary"><i class="bi bi-card-list"></i></span>
-        </div>
-        <div class="relative">
-          <input type="text" id="celular" placeholder="Celular *" class="input pl-10" required autocomplete="off" maxlength="20">
-          <span class="absolute left-3 top-2.5 text-primary"><i class="bi bi-phone"></i></span>
-        </div>
-        <div class="text-xs text-gray-500 mb-2">* Campos obligatorios</div>
-        <div class="flex gap-2 mt-4">
-          <button type="submit" class="bg-primary text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-indigo-700 transition-all duration-200 flex items-center gap-2">
-            <i class="bi bi-person-plus"></i> Guardar
-          </button>
-          <button type="button" onclick="limpiarFormulario()" class="bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-semibold shadow hover:bg-gray-400 transition-all duration-200 flex items-center gap-2">
-            <i class="bi bi-x-circle"></i> Cancelar
-          </button>
-        </div>
-        <div id="acciones-post-registro" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p class="text-green-800 font-semibold mb-3 flex items-center gap-2"><i class="bi bi-check-circle-fill"></i> ¡Paciente registrado exitosamente!</p>
-          <div class="flex gap-2 flex-wrap">
-            <button onclick="irAAgenda()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2">
-              <i class="bi bi-calendar-event"></i> Sacar Turno Ahora
-            </button>
-            <button onclick="registrarOtroPaciente()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2">
-              <i class="bi bi-person-plus"></i> Registrar Otro Paciente
-            </button>
-            <button onclick="verListaPacientes()" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 flex items-center gap-2">
-              <i class="bi bi-list-ul"></i> Ver Lista de Pacientes
-            </button>
-          </div>
-        </div>
-      </form>
-      <p id="mensaje" class="text-sm mt-2"></p>
-    </div>
-
-    <!-- Listado de pacientes -->
-    <div class="bg-white shadow rounded-lg p-4">
-      <div class="flex flex-col md:flex-row items-center justify-between mb-4 gap-2">
-        <input type="text" id="buscar" placeholder="Buscar por DNI o Apellido" class="border border-gray-300 rounded p-2 w-full md:w-2/3" />
-        <button onclick="cargarPacientes()" class="bg-primary text-white px-4 py-2 rounded w-full md:w-auto">Buscar</button>
       </div>
-      <div id="lista-pacientes" class="space-y-3 max-h-[400px] overflow-auto"></div>
+    </div>
+    <div class="row justify-content-center mt-5">
+      <div class="col-lg-7 col-md-9">
+        <div class="card shadow border-0">
+          <div class="card-header bg-white border-bottom-0 text-center py-3">
+            <h4 class="mb-0 text-secondary fw-bold d-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-people"></i> Lista de Pacientes
+            </h4>
+          </div>
+          <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-between mb-3 gap-2">
+              <input type="text" id="buscar" placeholder="Buscar por DNI o Apellido" class="form-control w-100 w-md-50 mb-2 mb-md-0" />
+              <button onclick="cargarPacientes()" class="btn btn-outline-primary px-4">Buscar</button>
+            </div>
+            <div id="lista-pacientes" class="overflow-auto" style="max-height: 400px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="text-center mt-4">
+      <a href="/" class="text-primary fw-semibold text-decoration-none"><i class="bi bi-arrow-left"></i> Volver al inicio</a>
     </div>
   </div>
-
-  <a href="/" class="mt-10 block text-center text-primary font-semibold hover:underline">← Volver al inicio</a>
 
   <script>
     // Variable para almacenar el DNI del último paciente registrado
@@ -138,13 +154,13 @@
     // Función para registrar otro paciente
     function registrarOtroPaciente() {
       limpiarFormulario();
-      document.getElementById('acciones-post-registro').classList.add('hidden');
+      document.getElementById('acciones-post-registro').classList.add('d-none');
     }
     
     // Función para ver la lista de pacientes
     function verListaPacientes() {
       cargarPacientes();
-      document.getElementById('acciones-post-registro').classList.add('hidden');
+      document.getElementById('acciones-post-registro').classList.add('d-none');
     }
     // Event listener para calcular edad automáticamente
     document.addEventListener('DOMContentLoaded', function() {
@@ -201,7 +217,7 @@
       document.getElementById("form-paciente").reset();
       document.getElementById("dni").readOnly = false;
       document.getElementById("mensaje").innerText = "";
-      document.getElementById('acciones-post-registro').classList.add('hidden');
+      document.getElementById('acciones-post-registro').classList.add('d-none');
       ultimoPacienteRegistrado = null;
     }
 
@@ -249,7 +265,7 @@
           ultimoPacienteRegistrado = datos.dni;
           document.getElementById("form-paciente").reset();
           document.getElementById("dni").readOnly = false;
-          document.getElementById('acciones-post-registro').classList.remove('hidden');
+          document.getElementById('acciones-post-registro').classList.remove('d-none');
         } else {
           // Si es edición, limpiar normalmente
           limpiarFormulario();
