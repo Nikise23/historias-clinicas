@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -6,42 +6,70 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     .hora-disponible { 
-      background-color: #e0f7fa; 
+      background-color: #d4edda !important; 
+      color: #155724 !important;
       cursor: pointer; 
       transition: all 0.3s ease;
-      border: 2px solid #17a2b8 !important;
+      border: 2px solid #28a745 !important;
+      min-height: 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     
     .hora-disponible:hover { 
-      background-color: #17a2b8 !important; 
+      background-color: #28a745 !important; 
       color: white !important;
       transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+      box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
     }
     
     .hora-ocupada { 
-      background-color: #ffcdd2; 
-      cursor: not-allowed;
+      background-color: #f8d7da !important;
+      color: #721c24 !important;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid #dc3545 !important;
+      min-height: 70px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
     }
+    
+    .hora-ocupada:hover {
+      background-color: #dc3545 !important; 
+      color: white !important;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    }
+    
+    .hora-ocupada small {
+      font-size: 0.7em;
+      line-height: 1.1;
+    }
+    
     .hora {
-      padding: 8px 12px;
+      padding: 8px 16px;
       margin: 4px;
       border-radius: 8px;
       display: inline-block;
       font-size: 14px;
       font-weight: 500;
     }
-
+    
     .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1rem;
     }
-
+    
     .top-bar h2 {
       margin: 0;
     }
+    
     /* Indicador visual para clicks */
     .hora-disponible:active {
       transform: translateY(0);
@@ -68,10 +96,53 @@
       from { opacity: 0; transform: scale(0.9); }
       to { opacity: 1; transform: scale(1); }
     }
+    
+    /* Estilos para el selector de fecha */
+    #fecha-agenda {
+      font-weight: 600;
+      border: 2px solid #007bff;
+    }
+    
+    #fecha-agenda:focus {
+      border-color: #0056b3;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    /* Mejorar las estadísticas */
+    #estadisticas-dia .badge {
+      font-size: 1.2em;
+      padding: 0.5em 0.75em;
+    }
+    
+    /* Destacar los días de fin de semana */
+    .weekend-warning {
+      background-color: #fff3cd;
+      border: 1px solid #ffecb5;
+      color: #856404;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+    
+    /* Estilos para mejor legibilidad */
+    .hora {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    
+    /* Animación para cambio de fecha */
+    #agenda-container {
+      transition: all 0.3s ease;
+    }
+    
+    /* Mejorar tooltips */
+    .tooltip-inner {
+      max-width: 300px;
+      text-align: left;
+    }
   </style>
 </head>
 <body class="container py-4">
-
   <div class="top-bar">
     <div>
       <a href="/" class="btn btn-outline-secondary me-2">← Volver al inicio</a>
@@ -100,9 +171,33 @@
   <!-- Instrucciones generales siempre visibles -->
   <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
     <div>
-      <strong>💡 Cómo asignar un turno:</strong> 
-      Expande el acordeón del médico y haz clic en cualquier horario disponible (botones azules). 
-      El paciente se preseleccionará automáticamente si vienes desde el registro.
+      <strong>💡 Cómo usar la agenda:</strong> 
+      Selecciona una fecha, expande el médico y ve los horarios: 
+      <span class="badge bg-success">🟢 Disponible</span> 
+      <span class="badge bg-danger">🔴 Ocupado</span>
+    </div>
+  </div>
+
+  <!-- Selector de fecha y estadísticas -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title">📅 Seleccionar Fecha</h6>
+          <input type="date" id="fecha-agenda" class="form-control" onchange="cargarAgendaParaFecha()">
+          <small class="text-muted">Selecciona una fecha para ver la disponibilidad</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title">📊 Resumen del Día</h6>
+          <div id="estadisticas-dia">
+            <small class="text-muted">Selecciona una fecha para ver las estadísticas</small>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -143,16 +238,50 @@
     let turnos = [];
     let pacientes = [];
     let turnoActual = { medico: "", hora: "" };
+    let fechaSeleccionada = null;
+    let turnosDelDia = [];
+    
+    // Función auxiliar para crear fechas sin problemas de timezone
+    function crearFechaSegura(fechaString) {
+      const [year, month, day] = fechaString.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+    
+    // Función auxiliar para formatear fecha a string local
+    function formatearFechaLocal(fechaString) {
+      return crearFechaSegura(fechaString).toLocaleDateString('es-ES');
+    }
+    
+    // Función centralizada para obtener el día de la semana
+    function obtenerDiaSemana(fechaString) {
+      const fecha = crearFechaSegura(fechaString);
+      const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
+      
+      // Log temporal para debug
+      if (fechaString === '2025-07-10') {
+        console.log('🔍 DEBUG para 2025-07-10:');
+        console.log('fecha creada:', fecha);
+        console.log('getDay():', fecha.getDay());
+        console.log('nombreDia:', diasSemana[fecha.getDay()]);
+      }
+      
+      return {
+        numerodia: fecha.getDay(),
+        nombreDia: diasSemana[fecha.getDay()],
+        fecha: fecha
+      };
+    }
 
     function renderAgenda() {
       const container = document.getElementById("agenda-container");
       container.innerHTML = "";
-      
+
       let isFirst = true;
       for (const med in agenda) {
         const collapseId = `collapse-${med.replace(/\s/g, "")}`;
         const card = document.createElement("div");
         card.className = "accordion-item mb-3 shadow-sm";
+        
         // Para el primer médico, expandir automáticamente si viene desde registro
         const urlParams = new URLSearchParams(window.location.search);
         const shouldExpand = isFirst && urlParams.get('dni');
@@ -182,32 +311,78 @@
     }
 
     function renderDias(medico) {
-      let html = "";
-      const dias = ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"];
+      if (!fechaSeleccionada) {
+        return "<p class='text-muted'>Selecciona una fecha para ver los horarios disponibles</p>";
+      }
 
-      for (const dia of dias) {
+      // Obtener el día de la semana usando función centralizada
+      const infoFecha = obtenerDiaSemana(fechaSeleccionada);
+      const diaSeleccionado = infoFecha.nombreDia;
+      
+      // Solo mostrar el día seleccionado
+      const horas = agenda[medico][diaSeleccionado] || [];
+      
+      if (horas.length === 0) {
+        return `<p class='text-muted'>No hay horarios configurados para ${diaSeleccionado.toLowerCase()}</p>`;
+      }
+
+      let html = `<h6 class="mt-3 mb-2 text-primary">${diaSeleccionado} - ${formatearFechaLocal(fechaSeleccionada)}</h6><div class="mb-3">`;
+      
+      let disponibles = 0;
+      let ocupados = 0;
+      
+      for (const hora of horas) {
+        // Verificar si este horario está ocupado
+        const turnoExistente = turnosDelDia.find(t => 
+          t.medico === medico && 
+          t.hora === hora && 
+          t.fecha === fechaSeleccionada
+        );
         
-        const horas = agenda[medico][dia] || [];
-        if (horas.length > 0) {
-          html += `<h6 class="mt-3 mb-2 text-primary">${dia}</h6><div class="mb-3">`;
-          for (const hora of horas) {
-            html += `<span class="hora hora-disponible btn btn-outline-info btn-sm me-2 mb-2"
-                          title="Clic para asignar turno a las ${hora}"
-                          data-bs-toggle="tooltip"
-                          onclick="toggleHora('${medico}', '${hora}')">
-                         📅 ${hora}
-                       </span>`;
-          }
-          html += "</div>";
+        if (turnoExistente) {
+          // Horario ocupado - rojo
+          const paciente = pacientes.find(p => p.dni === turnoExistente.dni_paciente);
+          const nombrePaciente = paciente ? `${paciente.nombre} ${paciente.apellido}` : turnoExistente.dni_paciente;
+          const estadoEmoji = {
+            'sin atender': '⏳',
+            'recepcionado': '📋', 
+            'sala de espera': '🪑',
+            'llamado': '📢',
+            'atendido': '✅',
+            'ausente': '❌'
+          }[turnoExistente.estado] || '⏳';
+          
+          html += `<span class="hora hora-ocupada btn btn-danger btn-sm me-2 mb-2" 
+                        title="Ocupado: ${nombrePaciente} - Estado: ${turnoExistente.estado}"
+                        data-bs-toggle="tooltip"
+                        onclick="verDetallesTurno('${medico}', '${hora}', '${turnoExistente.dni_paciente}')">
+                       🔴 ${hora} <br><small>${estadoEmoji} ${nombrePaciente}</small>
+                     </span>`;
+          ocupados++;
         } else {
-          html += `<h6 class="mt-3 mb-2 text-muted">${dia}</h6>`;
-          html += `<p class="text-muted small mb-3">Sin horarios disponibles</p>`;
+          // Horario disponible - verde
+          html += `<span class="hora hora-disponible btn btn-success btn-sm me-2 mb-2"
+                        title="Disponible - Clic para asignar turno a las ${hora}"
+                        data-bs-toggle="tooltip"
+                        onclick="toggleHora('${medico}', '${hora}')">
+                       � ${hora}
+                     </span>`;
+         disponibles++;
         }
       }
       
-      if (html === "") {
-        html = "<p class='text-muted'>No hay horarios configurados para este médico</p>";
-      }
+      html += "</div>";
+      
+      // Agregar estadísticas del médico
+      html += `<div class="mt-2 p-2 bg-light rounded">
+                 <small class="text-muted">
+                   📊 Estadísticas: 
+                   <span class="badge bg-success">${disponibles} disponibles</span> 
+                   <span class="badge bg-danger">${ocupados} ocupados</span>
+                   <span class="badge bg-info">${Math.round((ocupados/(disponibles+ocupados))*100) || 0}% ocupación</span>
+                 </small>
+               </div>`;
+      
       return html;
     }
 
@@ -215,11 +390,126 @@
       turnoActual = { medico, hora };
       mostrarModalTurno();
     }
-
     
+    function verDetallesTurno(medico, hora, dni_paciente) {
+      const turno = turnosDelDia.find(t => t.medico === medico && t.hora === hora && t.dni_paciente === dni_paciente);
+      const paciente = pacientes.find(p => p.dni === dni_paciente);
+      
+      if (turno && paciente) {
+        const mensaje = `
+          📋 Detalles del Turno
+          
+          👨‍⚕️ Médico: ${medico}
+          ⏰ Hora: ${hora}
+          📅 Fecha: ${formatearFechaLocal(fechaSeleccionada)}
+          
+          👤 Paciente: ${paciente.nombre} ${paciente.apellido}
+          🆔 DNI: ${paciente.dni}
+          📞 Teléfono: ${paciente.celular}
+          🏥 Obra Social: ${paciente.obra_social}
+          
+          🔄 Estado: ${turno.estado}
+          
+          ¿Qué deseas hacer?
+        `;
+        
+        if (confirm(mensaje + "\n\nPresiona OK para editar/cancelar el turno o Cancelar para cerrar")) {
+          // Aquí podrías abrir un modal de edición o redirigir a la gestión de turnos
+          window.location.href = `/turnos/gestion?dni=${dni_paciente}&fecha=${fechaSeleccionada}&hora=${hora}`;
+        }
+      }
+    }
+    
+    function cargarAgendaParaFecha() {
+      fechaSeleccionada = document.getElementById('fecha-agenda').value;
+      if (!fechaSeleccionada) return;
+      
+      // Verificar si es fin de semana usando función centralizada
+      const infoFecha = obtenerDiaSemana(fechaSeleccionada);
+      const diaSemana = infoFecha.numerodia; // 0 = domingo, 6 = sábado
+      
+      // Eliminar advertencia anterior
+      const advertenciaAnterior = document.querySelector('.weekend-warning');
+      if (advertenciaAnterior) {
+        advertenciaAnterior.remove();
+      }
+
+      if (diaSemana === 0 || diaSemana === 6) {
+        // Es fin de semana
+        const container = document.getElementById('agenda-container');
+        const advertencia = document.createElement('div');
+        advertencia.className = 'weekend-warning';
+        advertencia.innerHTML = `
+          <strong>⚠️ Fin de Semana</strong><br>
+          Has seleccionado un ${diaSemana === 0 ? 'domingo' : 'sábado'}. 
+          Generalmente no hay atención médica los fines de semana.
+        `;
+        container.parentNode.insertBefore(advertencia, container);
+      }
+      
+      // Filtrar turnos para la fecha seleccionada
+      turnosDelDia = turnos.filter(t => t.fecha === fechaSeleccionada);
+      
+      // Actualizar estadísticas generales
+      actualizarEstadisticasDia();
+      
+      // Re-renderizar la agenda
+      renderAgenda();
+    }
+    
+    function actualizarEstadisticasDia() {
+      if (!fechaSeleccionada) return;
+      
+      // Obtener el día de la semana usando función centralizada
+      const infoFecha = obtenerDiaSemana(fechaSeleccionada);
+      const diaSeleccionado = infoFecha.nombreDia;
+      
+      let totalDisponibles = 0;
+      let totalOcupados = turnosDelDia.length;
+      
+      // Calcular total de horarios disponibles para todos los médicos
+      for (const medico in agenda) {
+        const horas = agenda[medico][diaSeleccionado] || [];
+        totalDisponibles += horas.length;
+      }
+      
+      const totalLibres = totalDisponibles - totalOcupados;
+      const porcentajeOcupacion = totalDisponibles > 0 ? Math.round((totalOcupados/totalDisponibles)*100) : 0;
+      
+      const estadisticas = document.getElementById('estadisticas-dia');
+      estadisticas.innerHTML = `
+        <div class="row text-center">
+          <div class="col-4">
+            <div class="badge bg-success fs-6">${totalLibres}</div>
+            <div><small>Libres</small></div>
+          </div>
+          <div class="col-4">
+            <div class="badge bg-danger fs-6">${totalOcupados}</div>
+            <div><small>Ocupados</small></div>
+          </div>
+          <div class="col-4">
+            <div class="badge bg-info fs-6">${porcentajeOcupacion}%</div>
+            <div><small>Ocupación</small></div>
+          </div>
+        </div>
+        <div class="mt-2">
+          <small class="text-muted">
+            ${diaSeleccionado} - ${formatearFechaLocal(fechaSeleccionada)}
+          </small>
+        </div>
+      `;
+    }
+
     function mostrarModalTurno() {
-      document.getElementById("info-turno").textContent =
-        `Turno para ${turnoActual.medico} a las ${turnoActual.hora}`;
+      const fechaFormateada = formatearFechaLocal(fechaSeleccionada);
+      
+      document.getElementById("info-turno").innerHTML = `
+        <strong>Turno para ${turnoActual.medico} a las ${turnoActual.hora}</strong><br>
+        <small class="text-info">📅 Fecha: ${fechaFormateada}</small>
+      `;
+
+      // Pre-llenar la fecha del turno
+      document.getElementById("fecha-turno").value = fechaSeleccionada;
 
       const select = document.getElementById("paciente-select");
       select.innerHTML = pacientes.map(p =>
@@ -241,6 +531,7 @@
           const infoTurno = document.getElementById("info-turno");
           infoTurno.innerHTML = `
             <strong>Turno para ${turnoActual.medico} a las ${turnoActual.hora}</strong><br>
+            <small class="text-info">📅 Fecha: ${fechaFormateada}</small><br>
             <small class="text-success">✅ Paciente preseleccionado: ${pacienteSeleccionado.nombre} ${pacienteSeleccionado.apellido}</small>
           `;
         }
@@ -263,7 +554,7 @@
       if (!fecha) return alert("Debe seleccionar una fecha");
 
       const pacienteSeleccionado = pacientes.find(p => p.dni === dni_paciente);
-      const fechaFormateada = new Date(fecha).toLocaleDateString('es-ES');
+      const fechaFormateada = formatearFechaLocal(fecha);
 
       fetch("/api/turnos", {
         method: "POST",
@@ -293,8 +584,11 @@
           
           if (confirm(mensaje + "\n\nPresiona OK para registrar otro paciente o Cancelar para quedarte en la agenda")) {
             window.location.href = "/pacientes";
-          } else {
-            fetchTurnos().then(() => renderAgenda());
+           } else {
+            // Recargar datos y actualizar la vista
+            fetchTurnos().then(() => {
+              cargarAgendaParaFecha(); // Esto actualiza los turnos del día y re-renderiza
+            });
           }
         }
       })
@@ -315,6 +609,21 @@
       agenda = await agendaRes.json();
       pacientes = await pacientesRes.json();
       turnos = await turnosRes.json();
+      
+      // Establecer fecha de hoy por defecto - usando timezone local
+      const hoy = new Date();
+      const year = hoy.getFullYear();
+      const month = String(hoy.getMonth() + 1).padStart(2, '0');
+      const day = String(hoy.getDate()).padStart(2, '0');
+      const fechaHoy = `${year}-${month}-${day}`;
+      document.getElementById('fecha-agenda').value = fechaHoy;
+      fechaSeleccionada = fechaHoy;
+      
+      // Filtrar turnos para hoy
+      turnosDelDia = turnos.filter(t => t.fecha === fechaSeleccionada);
+      
+      // Actualizar estadísticas y renderizar
+      actualizarEstadisticasDia();
       renderAgenda();
       
       // Mostrar mensaje si viene desde registro de paciente
@@ -334,4 +643,5 @@
   </script>
 </body>
 </html>
+
 

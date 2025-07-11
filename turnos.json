@@ -45,5 +45,19 @@
         "fecha": "2025-07-10",
         "dni_paciente": "1231414",
         "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "09:00",
+        "fecha": "2025-07-10",
+        "dni_paciente": "38099876",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "09:10",
+        "fecha": "2025-07-10",
+        "dni_paciente": "40022695",
+        "estado": "sin atender"
     }
 ]
