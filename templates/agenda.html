@@ -255,12 +255,10 @@
     // Función para obtener la fecha actual en zona horaria de Argentina
     function obtenerFechaArgentina() {
       const hoy = new Date();
-      // Ajustar a zona horaria de Argentina (UTC-3)
-      const offsetArgentina = -3 * 60; // -3 horas en minutos
-      const fechaArgentina = new Date(hoy.getTime() + (offsetArgentina * 60 * 1000));
-      const year = fechaArgentina.getUTCFullYear();
-      const month = String(fechaArgentina.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(fechaArgentina.getUTCDate()).padStart(2, '0');
+      // Obtener la fecha local en la zona horaria del navegador
+      const year = hoy.getFullYear();
+      const month = String(hoy.getMonth() + 1).padStart(2, '0');
+      const day = String(hoy.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     }
     

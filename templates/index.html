@@ -93,9 +93,9 @@
         </a>
       </div>
       <div class="col">
-        <a href="/historias?dni=" class="btn btn-outline-success btn-action">
+        <button onclick="abrirModalHistoriaClinica()" class="btn btn-outline-success btn-action">
           <i class="bi bi-file-medical"></i> Crear Historia Clínica
-        </a>
+        </button>
       </div>
     </div>
   </div>
@@ -480,6 +480,14 @@
           filtradas.length ? mostrarHistorias(filtradas)
                            : alert("No se encontraron coincidencias");
         });
+    }
+
+    /* === Modal para crear historia clínica === */
+    function abrirModalHistoriaClinica() {
+      const dni = prompt("Ingrese el DNI del paciente para crear la historia clínica:");
+      if (dni && dni.trim()) {
+        window.location.href = `/historias?dni=${dni.trim()}`;
+      }
     }
   </script>
 </body>

@@ -472,7 +472,7 @@ def ver_agenda():
 
 @app.route("/api/agenda", methods=["GET"])
 @login_requerido
-@rol_requerido("secretaria")
+@rol_permitido(["secretaria", "medico"])
 def obtener_agenda():
     try:
         agenda_data = cargar_json(AGENDA_FILE)
