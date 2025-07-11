@@ -59,5 +59,32 @@
         "fecha": "2025-07-10",
         "dni_paciente": "40022695",
         "estado": "sin atender"
+    },
+    {
+        "dni_paciente": "37863139",
+        "medico": "Marianela Bobbiesi",
+        "fecha": "2025-07-11",
+        "hora": "14:05",
+        "estado": "sala de espera",
+        "hora_sala_espera": "14:00"
+    },
+    {
+        "dni_paciente": "40022695",
+        "medico": "Marianela Bobbiesi",
+        "fecha": "2025-07-11",
+        "hora": "14:10",
+        "estado": "llamado",
+        "hora_sala_espera": "14:02",
+        "hora_llamado": "14:08"
+    },
+    {
+        "dni_paciente": "38099876",
+        "medico": "Marianela Bobbiesi",
+        "fecha": "2025-07-11",
+        "hora": "14:15",
+        "estado": "atendido",
+        "hora_sala_espera": "14:05",
+        "hora_llamado": "14:12",
+        "hora_atendido": "14:15"
     }
 ]

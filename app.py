@@ -49,7 +49,7 @@ def calcular_edad(fecha_nacimiento):
         return None
 
 def validar_historia(data):
-    campos_obligatorios = ["nombre", "dni", "diagnostico", "medico"]
+    campos_obligatorios = ["dni", "consulta_medica", "medico"]
     for campo in campos_obligatorios:
         if not data.get(campo) or not str(data[campo]).strip():
             return False, f"El campo '{campo}' es obligatorio."
@@ -59,7 +59,7 @@ def validar_historia(data):
         return False, "DNI inválido."
 
 
-    for campo in ["fecha_nacimiento", "fecha_consulta"]:
+    for campo in ["fecha_consulta"]:
         fecha = data.get(campo)
         if fecha:
             try:

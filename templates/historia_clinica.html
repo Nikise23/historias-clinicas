@@ -3,163 +3,288 @@
 <head>
   <meta charset="UTF-8">
   <title>Historia Clínica</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .patient-info {
+      background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+      border-left: 4px solid #2196f3;
+    }
+    .history-entry {
+      background: linear-gradient(135deg, #f3e5f5 0%, #ffffff 100%);
+      border-left: 4px solid #9c27b0;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 p-6 font-sans">
-  <div class="max-w-4xl mx-auto bg-white shadow-md rounded-xl p-6">
-    <h1 class="text-2xl font-bold mb-4">Historia Clínica del Paciente</h1>
-
-
-    <form id="formHistoria" class="space-y-4">
-      <input type="hidden" id="dni" name="dni" value="{{ dni }}">
-
-
-      <div>
-        <label class="block font-medium">Nombre:</label>
-        <input type="text" id="nombre" name="nombre" class="border w-full p-2 rounded" required>
+<body class="p-4">
+  <div class="container-fluid">
+    
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h2><i class="bi bi-file-medical"></i> Historia Clínica</h2>
+            <p class="text-muted mb-0">Registro de consulta médica</p>
+          </div>
+          <div>
+            <a href="/turnos" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> Volver a Turnos
+            </a>
+          </div>
+        </div>
       </div>
-
-
-      <div>
-        <label class="block font-medium">Apellido:</label>
-        <input type="text" id="apellido" name="apellido" class="border w-full p-2 rounded" required>
-      </div>
-
-
-      <div>
-        <label class="block font-medium">Fecha de nacimiento:</label>
-        <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="border w-full p-2 rounded">
-      </div>
-
-
-      <div>
-        <label class="block font-medium">Obra social:</label>
-        <input type="text" id="obra_social" name="obra_social" class="border w-full p-2 rounded">
-      </div>
-
-
-      <div>
-        <label class="block font-medium">Número de obra social:</label>
-        <input type="text" id="numero_obra_social" name="numero_obra_social" class="border w-full p-2 rounded">
-      </div>
-
-
-      <div>
-        <label class="block font-medium">Diagnóstico:</label>
-        <textarea id="diagnostico" name="diagnostico" class="border w-full p-2 rounded" required></textarea>
-      </div>
-
-
-      <div>
-        <label class="block font-medium">Tratamiento:</label>
-        <textarea id="tratamiento" name="tratamiento" class="border w-full p-2 rounded"></textarea>
-      </div>
-
-
-      <div>
-        <label class="block font-medium">Observaciones:</label>
-        <textarea id="observaciones" name="observaciones" class="border w-full p-2 rounded"></textarea>
-      </div>
-
-
-      <div>
-        <label class="block font-medium">Fecha de atención:</label>
-        <input type="date" id="fecha_consulta" name="fecha_consulta" class="border w-full p-2 rounded">
-      </div>
-
-
-      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Guardar Historia</button>
-    </form>
-
-
-    <div class="mt-6">
-      <a href="/turnos" class="text-blue-600 hover:underline text-sm">← Volver a Turnos</a>
     </div>
 
-
-    <hr class="my-6">
-
-
-    <div id="historiasPrevias" class="space-y-4">
-      <h2 class="text-xl font-semibold mb-2">Entradas Anteriores</h2>
-      <!-- Las entradas se cargarán con JavaScript -->
+    <!-- Información del Paciente -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card patient-info">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-person-fill"></i> Información del Paciente</h5>
+          </div>
+          <div class="card-body">
+            <div id="patient-data">
+              <div class="text-center">
+                <i class="bi bi-hourglass-split fs-1 text-muted"></i>
+                <p class="text-muted">Cargando datos del paciente...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- Formulario de Consulta -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Nueva Consulta</h5>
+          </div>
+          <div class="card-body">
+            <form id="formHistoria">
+              <input type="hidden" id="dni" name="dni" value="{{ dni }}">
+              
+              <div class="mb-3">
+                <label for="consulta_medica" class="form-label">
+                  <strong>Consulta Médica:</strong>
+                </label>
+                <textarea 
+                  id="consulta_medica" 
+                  name="consulta_medica" 
+                  class="form-control" 
+                  rows="8" 
+                  placeholder="Describa la consulta médica realizada..."
+                  required
+                ></textarea>
+                <div class="form-text">
+                  Incluya: motivo de consulta, examen físico, diagnóstico, tratamiento indicado, etc.
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="fecha_consulta" class="form-label">
+                  <strong>Fecha de Consulta:</strong>
+                </label>
+                <input 
+                  type="date" 
+                  id="fecha_consulta" 
+                  name="fecha_consulta" 
+                  class="form-control"
+                  required
+                >
+              </div>
+
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-save"></i> Guardar Consulta
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="limpiarFormulario()">
+                  <i class="bi bi-arrow-clockwise"></i> Limpiar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial de Consultas -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Historial de Consultas</h5>
+          </div>
+          <div class="card-body">
+            <div id="historiasPrevias">
+              <div class="text-center">
+                <i class="bi bi-hourglass-split fs-1 text-muted"></i>
+                <p class="text-muted">Cargando historial...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     const dni = "{{ dni }}";
     const form = document.getElementById("formHistoria");
     const contenedorHistorias = document.getElementById("historiasPrevias");
+    const patientData = document.getElementById("patient-data");
 
+    // Establecer fecha de hoy por defecto
+    document.getElementById("fecha_consulta").value = new Date().toISOString().split('T')[0];
 
-    // Cargar todas las historias y filtrar por DNI
-    fetch("/api/historias")
-      .then(res => res.json())
-      .then(data => {
-        const historias = data.filter(h => h.dni === dni);
-        if (historias.length === 0) {
-          contenedorHistorias.innerHTML += "<p class='text-gray-600'>No hay entradas anteriores.</p>";
+    // Cargar datos del paciente
+    async function cargarDatosPaciente() {
+      try {
+        const response = await fetch("/api/pacientes");
+        const pacientes = await response.json();
+        const paciente = pacientes.find(p => p.dni === dni);
+        
+        if (paciente) {
+          patientData.innerHTML = `
+            <div class="row">
+              <div class="col-md-6">
+                <p><strong>Nombre:</strong> ${paciente.nombre} ${paciente.apellido}</p>
+                <p><strong>DNI:</strong> ${paciente.dni}</p>
+                <p><strong>Edad:</strong> ${paciente.edad || 'No especificada'} años</p>
+                <p><strong>Teléfono:</strong> ${paciente.celular || 'No especificado'}</p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>Obra Social:</strong> ${paciente.obra_social || 'No especificada'}</p>
+                <p><strong>N° Obra Social:</strong> ${paciente.numero_obra_social || 'No especificado'}</p>
+                <p><strong>Fecha de Nacimiento:</strong> ${paciente.fecha_nacimiento || 'No especificada'}</p>
+              </div>
+            </div>
+          `;
+        } else {
+          patientData.innerHTML = `
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle"></i>
+              Paciente no encontrado con DNI: ${dni}
+            </div>
+          `;
+        }
+      } catch (error) {
+        patientData.innerHTML = `
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i>
+            Error al cargar datos del paciente: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    // Cargar historial de consultas
+    async function cargarHistorial() {
+      try {
+        const response = await fetch("/api/historias");
+        const historias = await response.json();
+        const historiasPaciente = historias.filter(h => h.dni === dni);
+        
+        if (historiasPaciente.length === 0) {
+          contenedorHistorias.innerHTML = `
+            <div class="text-center text-muted">
+              <i class="bi bi-file-earmark-text fs-1"></i>
+              <p>No hay consultas anteriores registradas</p>
+            </div>
+          `;
           return;
         }
 
+        // Ordenar por fecha de consulta (más reciente primero)
+        historiasPaciente.sort((a, b) => new Date(b.fecha_consulta) - new Date(a.fecha_consulta));
 
-        historias.forEach(h => {
-          const div = document.createElement("div");
-          div.className = "border p-4 rounded bg-gray-50";
-          div.innerHTML = `
-            <p><strong>Fecha de atención:</strong> ${h.fecha_consulta || "No especificada"}</p>
-            <p><strong>Diagnóstico:</strong> ${h.diagnostico}</p>
-            <p><strong>Tratamiento:</strong> ${h.tratamiento || "Sin tratamiento"}</p>
-            <p><strong>Observaciones:</strong> ${h.observaciones || "Sin observaciones"}</p>
-            <p><strong>Médico:</strong> ${h.medico || "Desconocido"}</p>
+        let html = '';
+        historiasPaciente.forEach(h => {
+          const fecha = h.fecha_consulta ? new Date(h.fecha_consulta).toLocaleDateString('es-ES') : 'Fecha no especificada';
+          html += `
+            <div class="history-entry p-3 mb-3 rounded">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="mb-0">
+                  <i class="bi bi-calendar-check"></i> 
+                  Consulta del ${fecha}
+                </h6>
+                <small class="text-muted">Dr. ${h.medico || 'No especificado'}</small>
+              </div>
+              <div class="consultation-content">
+                ${h.consulta_medica ? h.consulta_medica.replace(/\n/g, '<br>') : 'Sin detalles de consulta'}
+              </div>
+            </div>
           `;
-          contenedorHistorias.appendChild(div);
         });
-      });
-
+        
+        contenedorHistorias.innerHTML = html;
+      } catch (error) {
+        contenedorHistorias.innerHTML = `
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i>
+            Error al cargar historial: ${error.message}
+          </div>
+        `;
+      }
+    }
 
     // Manejar envío del formulario
     form.addEventListener("submit", async e => {
       e.preventDefault();
 
-
       const datos = {
-        nombre: form.nombre.value,
-        apellido: form.apellido.value,
         dni: form.dni.value,
-        fecha_nacimiento: form.fecha_nacimiento.value,
-        obra_social: form.obra_social.value,
-        numero_obra_social: form.numero_obra_social.value,
-        diagnostico: form.diagnostico.value,
-        tratamiento: form.tratamiento.value,
-        observaciones: form.observaciones.value,
+        consulta_medica: form.consulta_medica.value,
         fecha_consulta: form.fecha_consulta.value,
       };
 
-
       // Agregar médico actual desde sesión
-      const sesion = await fetch("/api/session-info").then(r => r.json());
-      datos.medico = sesion.usuario;
+      try {
+        const sesion = await fetch("/api/session-info").then(r => r.json());
+        datos.medico = sesion.usuario;
+      } catch (error) {
+        alert("Error al obtener información de sesión");
+        return;
+      }
 
+      try {
+        const res = await fetch("/historias", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(datos)
+        });
 
-      const res = await fetch("/historias", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos)
-      });
+        const resultado = await res.json();
 
-
-      const resultado = await res.json();
-
-
-      if (res.ok) {
-        alert("Historia guardada correctamente.");
-        location.reload();
-      } else {
-        alert("Error: " + resultado.error);
+        if (res.ok) {
+          alert("Consulta guardada correctamente.");
+          form.reset();
+          document.getElementById("fecha_consulta").value = new Date().toISOString().split('T')[0];
+          cargarHistorial(); // Recargar historial
+        } else {
+          alert("Error: " + resultado.error);
+        }
+      } catch (error) {
+        alert("Error de conexión: " + error.message);
       }
     });
+
+    function limpiarFormulario() {
+      form.reset();
+      document.getElementById("fecha_consulta").value = new Date().toISOString().split('T')[0];
+    }
+
+    // Cargar datos al iniciar
+    cargarDatosPaciente();
+    cargarHistorial();
   </script>
 </body>
 </html>
