@@ -339,6 +339,7 @@
     }
 
     function renderizarAgendaMedico(fecha, container){
+      console.log('DEBUG - Fecha recibida:', fecha); // DEBUG
       Promise.all([
         fetch("/api/agenda"),
         fetch(`/api/turnos/dia?fecha=${fecha}`)
@@ -353,6 +354,7 @@
         const fechaObj = new Date(Number(anio), Number(mes) - 1, Number(dia));
         const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
         const diaSeleccionado = diasSemana[fechaObj.getDay()];
+        console.log('DEBUG - Fecha procesada:', fechaObj, 'Día calculado:', diaSeleccionado); // DEBUG
         
         // Filtrar turnos del médico
         const turnosMedico = turnos.filter(t => t.medico === usuarioMedico);
