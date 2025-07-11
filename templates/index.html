@@ -146,7 +146,12 @@
     <!-- Selector de Fecha para Agenda -->
     <div class="row mb-4">
       <div class="col-md-6">
-        <h5><i class="bi bi-calendar3"></i> Mi Agenda</h5>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5><i class="bi bi-calendar3"></i> Mi Agenda</h5>
+          <button class="btn btn-sm btn-outline-primary" onclick="toggleAgenda()" id="toggle-agenda-btn">
+            <i class="bi bi-eye"></i> Mostrar Agenda
+          </button>
+        </div>
         <div class="input-group">
           <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
           <input type="date" id="fecha-agenda-medico" class="form-control" onchange="cargarAgendaMedico()">
@@ -157,11 +162,18 @@
         <h5><i class="bi bi-clock"></i> Próximos Turnos</h5>
         <div id="proximos-turnos" class="small"></div>
       </div>
-    
     </div>
-    <!-- Agenda del Día -->
-    <div id="agenda-medico-container">
-      <h6 class="text-muted">Selecciona una fecha para ver tu agenda</h6>
+    
+    <!-- Agenda del Día (Colapsible) -->
+    <div id="agenda-medico-container" style="display: none;">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h6 class="mb-0"><i class="bi bi-calendar-day"></i> Agenda del Día</h6>
+        </div>
+        <div class="card-body" id="agenda-content">
+          <h6 class="text-muted">Selecciona una fecha para ver tu agenda</h6>
+        </div>
+      </div>
     </div>
 
 
@@ -259,7 +271,7 @@
       const fechaSeleccionada = document.getElementById("fecha-agenda-medico").value;
       if (!fechaSeleccionada) return;
       
-      const container = document.getElementById("agenda-medico-container");
+      const container = document.getElementById("agenda-content");
       
       // Obtener información del usuario si no la tenemos
       if (!usuarioMedico) {
@@ -414,7 +426,42 @@
         });
     }
     
+    function toggleAgenda(){
+      const container = document.getElementById("agenda-medico-container");
+      const btn = document.getElementById("toggle-agenda-btn");
+      const icon = btn.querySelector("i");
+      const text = btn.textContent.trim();
+      
+      if (container.style.display === "none") {
+        // Mostrar agenda
+        container.style.display = "block";
+        icon.className = "bi bi-eye-slash";
+        btn.innerHTML = '<i class="bi bi-eye-slash"></i> Ocultar Agenda';
+        btn.className = "btn btn-sm btn-outline-secondary";
+        
+        // Cargar agenda si hay fecha seleccionada
+        const fechaActual = document.getElementById("fecha-agenda-medico").value;
+        if (fechaActual) {
+          cargarAgendaMedico();
+        } else {
+          cargarAgendaHoy();
+        }
+      } else {
+        // Ocultar agenda
+        container.style.display = "none";
+        icon.className = "bi bi-eye";
+        btn.innerHTML = '<i class="bi bi-eye"></i> Mostrar Agenda';
+        btn.className = "btn btn-sm btn-outline-primary";
+      }
+    }
+
     function mostrarMiAgenda(){
+      // Mostrar agenda si está oculta
+      const container = document.getElementById("agenda-medico-container");
+      if (container.style.display === "none") {
+        toggleAgenda();
+      }
+      
       const fechaActual = document.getElementById("fecha-agenda-medico").value;
       if (fechaActual) {
         cargarAgendaMedico();
@@ -426,7 +473,6 @@
       document.getElementById("agenda-medico-container").scrollIntoView({ 
         behavior: 'smooth' 
       });
-
     }
 
     /* === Historias clínicas === */
