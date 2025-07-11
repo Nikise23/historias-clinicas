@@ -885,13 +885,13 @@ def mover_a_sala_espera():
     if not paciente:
         return jsonify({"error": "Paciente no encontrado"}), 404
      
-    # Verificar si ya existe un pago para este paciente en esta fecha
+    # Verificar si ya existe un pago para este paciente en esta fecha y hora
     pagos = cargar_json(PAGOS_FILE)
-    pago_existente = next((p for p in pagos if p["dni_paciente"] == dni_paciente and p["fecha"] == fecha), None)
-     
+    pago_existente = next((p for p in pagos if p["dni_paciente"] == dni_paciente and p["fecha"] == fecha and p.get("hora") == hora), None)
+    
     if pago_existente:
-        return jsonify({"error": "Ya existe un pago registrado para este paciente en esta fecha"}), 400
-     
+        return jsonify({"error": "Ya existe un pago registrado para este paciente en este turno"}), 400
+    
     # Registrar el pago
     nuevo_pago = {
         "id": len(pagos) + 1,
@@ -899,6 +899,7 @@ def mover_a_sala_espera():
         "nombre_paciente": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
         "monto": monto,
         "fecha": fecha,
+        "hora": hora,  # Guardar la hora del turno en el pago
         "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": observaciones,
         "obra_social": paciente.get("obra_social", "")
@@ -961,12 +962,12 @@ def cobrar_y_mover_a_sala():
     if not paciente:
         return jsonify({"error": "Paciente no encontrado"}), 404
     
-    # Verificar si ya existe un pago para este paciente en esta fecha
+    # Verificar si ya existe un pago para este paciente en esta fecha y hora
     pagos = cargar_json(PAGOS_FILE)
-    pago_existente = next((p for p in pagos if p["dni_paciente"] == dni_paciente and p["fecha"] == fecha), None)
+    pago_existente = next((p for p in pagos if p["dni_paciente"] == dni_paciente and p["fecha"] == fecha and p.get("hora") == hora), None)
     
     if pago_existente:
-        return jsonify({"error": "Ya existe un pago registrado para este paciente en esta fecha"}), 400
+        return jsonify({"error": "Ya existe un pago registrado para este paciente en este turno"}), 400
     
     # Registrar el pago
     nuevo_pago = {
@@ -975,6 +976,7 @@ def cobrar_y_mover_a_sala():
         "nombre_paciente": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
         "monto": monto,
         "fecha": fecha,
+        "hora": hora,  # Guardar la hora del turno en el pago
         "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": observaciones,
         "obra_social": paciente.get("obra_social", "")
