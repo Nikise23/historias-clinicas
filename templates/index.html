@@ -354,6 +354,7 @@
         const fechaObj = new Date(Number(anio), Number(mes) - 1, Number(dia));
         const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
         const diaSeleccionado = diasSemana[fechaObj.getDay()];
+        const fechaFormateada = `${dia}/${mes}/${anio}`;
         console.log('DEBUG - Fecha procesada:', fechaObj, 'Día calculado:', diaSeleccionado); // DEBUG
         
         // Filtrar turnos del médico
@@ -366,14 +367,14 @@
           container.innerHTML = `
             <div class="alert alert-info">
               <i class="bi bi-info-circle"></i> 
-              No tienes horarios configurados para ${diaSeleccionado.toLowerCase()} (${new Date(fecha).toLocaleDateString('es-ES')})
+              No tienes horarios configurados para ${diaSeleccionado.toLowerCase()} (${fechaFormateada})
             </div>
           `;
           return;
         }
         
         let html = `
-          <h6><i class="bi bi-calendar-day"></i> ${diaSeleccionado} - ${new Date(fecha).toLocaleDateString('es-ES')}</h6>
+          <h6><i class="bi bi-calendar-day"></i> ${diaSeleccionado} - ${fechaFormateada}</h6>
           <div class="row">
         `;
         horariosConfigurados.forEach(hora => {
