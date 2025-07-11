@@ -492,8 +492,9 @@ def actualizar_agenda_dia(medico, dia):
     nuevos_horarios = request.json
     if dia.upper() not in ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"]:
         return jsonify({"error": "Día inválido"}), 400
-    if not isinstance(nuevos_horarios, list):
-        return jsonify({"error": "Formato inválido, se espera una lista"}), 400
+    if not isinstance(nuevos_horarios, dict) or "horarios" not in nuevos_horarios or not isinstance(nuevos_horarios["horarios"], list):
+        return jsonify({"error": "Formato inválido, se espera un objeto con clave 'horarios' que sea una lista"}), 400
+    nuevos_horarios = nuevos_horarios["horarios"]
 
 
     agenda = cargar_json(AGENDA_FILE)
