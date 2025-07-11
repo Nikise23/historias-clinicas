@@ -18,5 +18,10 @@
         "usuario": "Juan Julian",
         "contrasena": "scrypt:32768:8:1$8fazmq7SXU9t2jhb$75eb03e02349126f2d1af330edcff517d0a69c766f30fcaa93216346fe27f7cfbf683975f9c116886fc9823a9355f78e97714037f60271da0842e42996d98269",
         "rol": "medico"
+    },
+    {
+        "usuario": "test",
+        "contrasena": "scrypt:32768:8:1$nh94OnRvtjgz3GO7$90f2f8a4a63eec7a54f9c3c324aae39df9e35d146f6bca054f7283325ecce1feaebcbcd5567a8d8f2140e11a961dd4126b385eda75bb9cb45557c60062d9faf1",
+        "rol": "secretaria"
     }
 ]

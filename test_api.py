@@ -11,7 +11,7 @@ def test_agenda_api():
     
     # Primero hacer login
     login_data = {
-        "usuario": "Agustina",
+        "usuario": "test",
         "contrasena": "123456"
     }
     
@@ -26,32 +26,39 @@ def test_agenda_api():
         response = session.post(f"{base_url}/login", data=login_data, allow_redirects=True)
         print(f"POST login status: {response.status_code}")
         print(f"URL final después del login: {response.url}")
+        print(f"Cookies: {dict(session.cookies)}")
         
         # Verificar si estamos logueados
         response = session.get(f"{base_url}/api/session-info")
         print(f"Session info status: {response.status_code}")
+        print(f"Session info response: {response.text}")
         
         if response.status_code == 200:
-            session_data = response.json()
-            print(f"Usuario logueado: {session_data}")
-            
-            # Probar la API de agenda
-            response = session.get(f"{base_url}/api/agenda")
-            print(f"API agenda status: {response.status_code}")
-            print(f"Content-Type: {response.headers.get('content-type', 'No especificado')}")
-            
-            if response.status_code == 200:
-                try:
-                    data = response.json()
-                    print("✅ API de agenda funciona correctamente")
-                    print(f"Datos recibidos: {json.dumps(data, indent=2, ensure_ascii=False)}")
-                    return True
-                except json.JSONDecodeError as e:
-                    print(f"❌ Error al decodificar JSON: {e}")
-                    print(f"Contenido de respuesta: {response.text[:200]}...")
+            try:
+                session_data = response.json()
+                print(f"Usuario logueado: {session_data}")
+                
+                # Probar la API de agenda
+                response = session.get(f"{base_url}/api/agenda")
+                print(f"API agenda status: {response.status_code}")
+                print(f"Content-Type: {response.headers.get('content-type', 'No especificado')}")
+                
+                if response.status_code == 200:
+                    try:
+                        data = response.json()
+                        print("✅ API de agenda funciona correctamente")
+                        print(f"Datos recibidos: {json.dumps(data, indent=2, ensure_ascii=False)}")
+                        return True
+                    except json.JSONDecodeError as e:
+                        print(f"❌ Error al decodificar JSON: {e}")
+                        print(f"Contenido de respuesta: {response.text[:200]}...")
+                        return False
+                else:
+                    print(f"❌ Error en API de agenda: {response.text}")
                     return False
-            else:
-                print(f"❌ Error en API de agenda: {response.text}")
+            except json.JSONDecodeError as e:
+                print(f"❌ Error al decodificar session info: {e}")
+                print(f"Session info response: {response.text}")
                 return False
         else:
             print(f"❌ No se pudo verificar la sesión: {response.text}")
