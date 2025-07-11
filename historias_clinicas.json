@@ -1,25 +1,50 @@
 [
     {
-        "nombre": "Nicolas Fernandez",
-        "dni": "37863139",
-        "fecha_nacimiento": "1993-10-13",
-        "fecha_consulta": "2025-07-02",
-        "diagnostico": "Miopia",
-        "tratamiento": "lentes",
-        "observaciones": "debe hacerse campo visual",
-        "medico": "Marianela Bobbiesi"
+        "dni": "38099876",
+        "consulta_medica": "sdfgghjkjlkjkhjgfhdgfhgjhj",
+        "fecha_consulta": "2025-07-11",
+        "medico": "Francisco Colom",
+        "id": 3,
+        "fecha_creacion": "2025-07-11T01:30:15.675684-03:00"
     },
     {
-        "nombre": "Maria Julieta",
-        "apellido": "Colom",
-        "dni": "40022695",
-        "fecha_nacimiento": "1996-11-04",
-        "obra_social": "swiss medical",
-        "numero_obra_social": "1235567898",
-        "diagnostico": "astigmatismo ",
-        "tratamiento": "lentes",
-        "observaciones": "debe hacerse fondo de ojo",
-        "fecha_consulta": "2025-07-03",
-        "medico": "Francisco Colom"
+        "dni": "38099876",
+        "consulta_medica": "jhjlhblblljljhbljh",
+        "fecha_consulta": "2025-07-11",
+        "medico": "Francisco Colom",
+        "id": 4,
+        "fecha_creacion": "2025-07-11T01:30:26.148793-03:00"
+    },
+    {
+        "dni": "37863139",
+        "consulta_medica": "mio pia debe realizarse campo",
+        "fecha_consulta": "2025-07-11",
+        "medico": "Francisco Colom",
+        "id": 3,
+        "fecha_creacion": "2025-07-11T01:39:16.813301-03:00"
+    },
+    {
+        "dni": "37863139",
+        "consulta_medica": "debe usar lentes y gotas",
+        "fecha_consulta": "2025-07-11",
+        "medico": "Francisco Colom",
+        "id": 4,
+        "fecha_creacion": "2025-07-11T02:47:15.423356-03:00"
+    },
+    {
+        "dni": "38099876",
+        "consulta_medica": "es un gato",
+        "fecha_consulta": "2025-07-11",
+        "medico": "Francisco Colom",
+        "id": 5,
+        "fecha_creacion": "2025-07-11T13:48:23.274028-03:00"
+    },
+    {
+        "dni": "2234323",
+        "consulta_medica": "dszfdxgchvjhkh",
+        "fecha_consulta": "2025-07-11",
+        "medico": "Julieta Colom",
+        "id": 6,
+        "fecha_creacion": "2025-07-11T16:33:21.395703-03:00"
     }
 ]

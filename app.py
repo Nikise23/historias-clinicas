@@ -4,13 +4,16 @@ import os
 import csv
 import io
 from functools import wraps
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "clave_insegura_dev")
 
+# Configurar zona horaria para Argentina (UTC-3)
+import pytz
+timezone_ar = pytz.timezone('America/Argentina/Buenos_Aires')
 
 DATA_FILE = "historias_clinicas.json"
 USUARIOS_FILE = "usuarios.json"
@@ -45,7 +48,7 @@ def calcular_edad(fecha_nacimiento):
         return None
 
 def validar_historia(data):
-    campos_obligatorios = ["nombre", "dni", "diagnostico", "medico"]
+    campos_obligatorios = ["dni", "consulta_medica", "medico"]
     for campo in campos_obligatorios:
         if not data.get(campo) or not str(data[campo]).strip():
             return False, f"El campo '{campo}' es obligatorio."
@@ -55,12 +58,15 @@ def validar_historia(data):
         return False, "DNI inválido."
 
 
-    for campo in ["fecha_nacimiento", "fecha_consulta"]:
+    for campo in ["fecha_consulta"]:
         fecha = data.get(campo)
         if fecha:
             try:
                 f = datetime.strptime(fecha, "%Y-%m-%d")
-                if f > datetime.now():
+                # Convertir a timezone-aware para comparar
+                f = f.replace(tzinfo=timezone_ar)
+                ahora = datetime.now(timezone_ar)
+                if f > ahora:
                     return False, f"La fecha '{campo}' no puede ser futura."
             except ValueError:
                 return False, f"Formato de fecha inválido en '{campo}'."
@@ -182,13 +188,14 @@ def crear_historia():
         return jsonify({"error": mensaje}), 400
 
 
-    if any(h["dni"] == nueva["dni"] for h in historias):
-        return jsonify({"error": "Ya existe una historia con ese DNI"}), 400
+    # Agregar ID único para la consulta
+    nueva["id"] = len(historias) + 1
+    nueva["fecha_creacion"] = datetime.now(timezone_ar).isoformat()
 
 
     historias.append(nueva)
     guardar_json(DATA_FILE, historias)
-    return jsonify({"mensaje": "Historia creada"}), 201
+    return jsonify({"mensaje": "Consulta registrada correctamente"}), 201
 
 
 @app.route("/historias/<dni>", methods=["GET", "PUT", "DELETE"])
@@ -467,9 +474,14 @@ def ver_agenda():
 
 @app.route("/api/agenda", methods=["GET"])
 @login_requerido
-@rol_requerido("secretaria")
+@rol_permitido(["secretaria", "medico"])
 def obtener_agenda():
-    return jsonify(cargar_json(AGENDA_FILE))
+    try:
+        agenda_data = cargar_json(AGENDA_FILE)
+        return jsonify(agenda_data)
+    except Exception as e:
+        print(f"Error al cargar agenda: {e}")
+        return jsonify({"error": "Error al cargar la agenda"}), 500
 
 
 @app.route("/api/agenda/<medico>/<dia>", methods=["PUT"])
@@ -479,9 +491,9 @@ def actualizar_agenda_dia(medico, dia):
     nuevos_horarios = request.json
     if dia.upper() not in ["LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES"]:
         return jsonify({"error": "Día inválido"}), 400
-    if not isinstance(nuevos_horarios, list):
-        return jsonify({"error": "Formato inválido, se espera una lista"}), 400
-
+    if not isinstance(nuevos_horarios, dict) or "horarios" not in nuevos_horarios or not isinstance(nuevos_horarios["horarios"], list):
+        return jsonify({"error": "Formato inválido, se espera un objeto con clave 'horarios' que sea una lista"}), 400
+    nuevos_horarios = nuevos_horarios["horarios"]
 
     agenda = cargar_json(AGENDA_FILE)
     if medico not in agenda:
@@ -605,7 +617,7 @@ def registrar_pago():
         "nombre_paciente": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
         "monto": monto,
         "fecha": data["fecha"],
-        "fecha_registro": datetime.now().isoformat(),
+        "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": data.get("observaciones", ""),
         "obra_social": paciente.get("obra_social", "")
     }
@@ -816,7 +828,7 @@ def recepcionar_paciente():
             turno["hora"] == hora):
             
             turno["estado"] = "recepcionado"
-            turno["hora_recepcion"] = datetime.now().strftime("%H:%M")
+            turno["hora_recepcion"] = datetime.now(timezone_ar).strftime("%H:%M")
             
             guardar_json(TURNOS_FILE, turnos)
             return jsonify({"mensaje": "Paciente recepcionado correctamente"})
@@ -872,13 +884,16 @@ def mover_a_sala_espera():
     if not paciente:
         return jsonify({"error": "Paciente no encontrado"}), 404
      
-    # Verificar si ya existe un pago para este paciente en esta fecha
+    # Verificar si ya existe un pago para este paciente en esta fecha y hora
     pagos = cargar_json(PAGOS_FILE)
-    pago_existente = next((p for p in pagos if p["dni_paciente"] == dni_paciente and p["fecha"] == fecha), None)
-     
+    pago_existente = next((p for p in pagos if p["dni_paciente"] == dni_paciente and p["fecha"] == fecha and p.get("hora") == hora), None)
+    
     if pago_existente:
-        return jsonify({"error": "Ya existe un pago registrado para este paciente en esta fecha"}), 400
-     
+        return jsonify({"error": "Ya existe un pago registrado para este paciente en este turno"}), 400
+    
+    if pago_existente:
+        return jsonify({"error": "Ya existe un pago registrado para este paciente en este turno"}), 400
+    
     # Registrar el pago
     nuevo_pago = {
         "id": len(pagos) + 1,
@@ -886,7 +901,8 @@ def mover_a_sala_espera():
         "nombre_paciente": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
         "monto": monto,
         "fecha": fecha,
-        "fecha_registro": datetime.now().isoformat(),
+        "hora": hora,  # Guardar la hora del turno en el pago
+        "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": observaciones,
         "obra_social": paciente.get("obra_social", "")
     }
@@ -895,7 +911,7 @@ def mover_a_sala_espera():
     guardar_json(PAGOS_FILE, pagos)
     # Mover a sala de espera
     turno_encontrado["estado"] = "sala de espera"
-    turno_encontrado["hora_sala_espera"] = datetime.now().strftime("%H:%M")
+    turno_encontrado["hora_sala_espera"] = datetime.now(timezone_ar).strftime("%H:%M")
     turno_encontrado["pago_registrado"] = True
     turno_encontrado["monto_pagado"] = monto
      
@@ -962,7 +978,7 @@ def cobrar_y_mover_a_sala():
         "nombre_paciente": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
         "monto": monto,
         "fecha": fecha,
-        "fecha_registro": datetime.now().isoformat(),
+        "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": observaciones,
         "obra_social": paciente.get("obra_social", "")
     }
@@ -972,7 +988,7 @@ def cobrar_y_mover_a_sala():
     
     # Mover a sala de espera
     turno_encontrado["estado"] = "sala de espera"
-    turno_encontrado["hora_sala_espera"] = datetime.now().strftime("%H:%M")
+    turno_encontrado["hora_sala_espera"] = datetime.now(timezone_ar).strftime("%H:%M")
     turno_encontrado["pago_registrado"] = True
     turno_encontrado["monto_pagado"] = monto
     
@@ -1006,6 +1022,28 @@ def obtener_turnos_dia():
     
     return jsonify(turnos_dia)
 
+@app.route('/api/turnos/limpiar-vencidos', methods=['POST'])
+@login_requerido
+@rol_requerido('secretaria')
+def limpiar_turnos_vencidos():
+    from datetime import datetime, timedelta
+    turnos = cargar_json(TURNOS_FILE)
+    ahora = datetime.now()
+    nuevos = []
+    eliminados = 0
+    for t in turnos:
+        fecha_hora_str = f"{t.get('fecha', '')} {t.get('hora', '00:00')}"
+        try:
+            fecha_hora = datetime.strptime(fecha_hora_str, "%Y-%m-%d %H:%M")
+        except Exception:
+            nuevos.append(t)
+            continue
+        if t.get('estado', '').lower() == 'sin atender' and fecha_hora < ahora - timedelta(hours=24):
+            eliminados += 1
+        else:
+            nuevos.append(t)
+    guardar_json(TURNOS_FILE, nuevos)
+    return jsonify({"eliminados": eliminados, "ok": True})
 # ====================================================
 
 

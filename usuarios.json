@@ -18,5 +18,10 @@
         "usuario": "Juan Julian",
         "contrasena": "scrypt:32768:8:1$8fazmq7SXU9t2jhb$75eb03e02349126f2d1af330edcff517d0a69c766f30fcaa93216346fe27f7cfbf683975f9c116886fc9823a9355f78e97714037f60271da0842e42996d98269",
         "rol": "medico"
+    },
+    {
+        "usuario": "Julieta Colom",
+        "contrasena": "scrypt:32768:8:1$OFAvrSmMFFRqUa1L$b7e223e768b5e35ad96216bdcd9af8bf7bd97df9f1909b3eef2dcfe13da66a7b43726e72d1cafaf8d1dcd8c8277ae24056265d70f5903d4e7aff125f8141452c",
+        "rol": "medico"
     }
 ]

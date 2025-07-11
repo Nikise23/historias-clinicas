@@ -93,9 +93,10 @@
         </a>
       </div>
       <div class="col">
-        <a href="/historias?dni=" class="btn btn-outline-success btn-action">
+        <button onclick="abrirModalHistoriaClinica()" class="btn btn-outline-success btn-action">
           <i class="bi bi-file-medical"></i> Crear Historia Clínica
         </a>
+        </button>
       </div>
     </div>
   </div>
@@ -146,7 +147,12 @@
     <!-- Selector de Fecha para Agenda -->
     <div class="row mb-4">
       <div class="col-md-6">
-        <h5><i class="bi bi-calendar3"></i> Mi Agenda</h5>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5><i class="bi bi-calendar3"></i> Mi Agenda</h5>
+          <button class="btn btn-sm btn-outline-primary" onclick="toggleAgenda()" id="toggle-agenda-btn">
+            <i class="bi bi-eye"></i> Mostrar Agenda
+          </button>
+        </div>
         <div class="input-group">
           <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
           <input type="date" id="fecha-agenda-medico" class="form-control" onchange="cargarAgendaMedico()">
@@ -159,27 +165,84 @@
       </div>
     
     </div>
-    <!-- Agenda del Día -->
-    <div id="agenda-medico-container">
-      <h6 class="text-muted">Selecciona una fecha para ver tu agenda</h6>
+    <!-- Agenda del Día (Colapsible) -->
+    <div id="agenda-medico-container" style="display: none;">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h6 class="mb-0"><i class="bi bi-calendar-day"></i> Agenda del Día</h6>
+        </div>
+        <div class="card-body" id="agenda-content">
+          <h6 class="text-muted">Selecciona una fecha para ver tu agenda</h6>
+        </div>
+      </div>
     </div>
 
 
   <!-- Buscador de historias (solo médico) -->
   <div class="card-panel" id="busqueda-pacientes" style="display:none">
-    <h3>Buscar Historia Clínica</h3>
-    <div class="row g-3 mb-3">
-      <div class="col-md-6">
-        <input id="dni_buscar" class="form-control" placeholder="Buscar por DNI">
+    <div class="card">
+      <div class="card-header bg-info text-white">
+        <h4 class="mb-0"><i class="bi bi-search"></i> Buscar Historia Clínica</h4>
       </div>
-      <div class="col-md-6">
-        <input id="apellido_buscar" class="form-control" placeholder="Buscar por Apellido">
+      <div class="card-body">
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+              <input id="dni_buscar" class="form-control" placeholder="Buscar por DNI" type="number">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person"></i></span>
+              <input id="apellido_buscar" class="form-control" placeholder="Buscar por Apellido">
+            </div>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <button class="btn btn-primary" onclick="buscarPorDNI()">
+            <i class="bi bi-search"></i> Buscar por DNI
+          </button>
+          <button class="btn btn-primary" onclick="buscarPorApellido()">
+            <i class="bi bi-search"></i> Buscar por Apellido
+          </button>
+          <button class="btn btn-success" onclick="cargarHistorias()">
+            <i class="bi bi-list-ul"></i> Cargar todas
+          </button>
+          <button class="btn btn-warning" onclick="limpiarBusqueda()">
+            <i class="bi bi-arrow-clockwise"></i> Limpiar
+          </button>
+        </div>
+        
+        <!-- Estadísticas de búsqueda -->
+        <div class="row mb-3" id="estadisticas-busqueda" style="display: none;">
+          <div class="col-md-4">
+            <div class="card bg-primary text-white text-center">
+              <div class="card-body">
+                <h5 id="total-resultados">0</h5>
+                <small>Resultados encontrados</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-success text-white text-center">
+              <div class="card-body">
+                <h5 id="pacientes-unicos">0</h5>
+                <small>Pacientes únicos</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-info text-white text-center">
+              <div class="card-body">
+                <button class="btn btn-light btn-sm" onclick="descargarResultadosPDF()">
+                  <i class="bi bi-download"></i> Descargar PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-      <button class="btn btn-secondary" onclick="buscarPorDNI()">Buscar por DNI</button>
-      <button class="btn btn-secondary" onclick="buscarPorApellido()">Buscar por Apellido</button>
-      <button class="btn btn-secondary" onclick="cargarHistorias()">Cargar todas</button>
     </div>
   </div>
 
@@ -190,6 +253,8 @@
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 
   <script>
@@ -214,10 +279,11 @@
 
     /* === Dashboard del Médico === */
     let usuarioMedico = null;
+     let historiasResultado = []; // Para almacenar resultados de búsqueda
     
     function cargarDashboardMedico(){
       // Establecer fecha de hoy por defecto
-      const hoy = new Date().toISOString().slice(0, 10);
+      const hoy = new Date().toLocaleDateString('en-CA'); // formato YYYY-MM-DD en zona local
       document.getElementById("fecha-agenda-medico").value = hoy;
       
       // Cargar estadísticas del día
@@ -231,7 +297,7 @@
     }
     
     function cargarEstadisticasMedico(){
-      const hoy = new Date().toISOString().slice(0, 10);
+      const hoy = new Date().toLocaleDateString('en-CA'); // formato YYYY-MM-DD en zona local
       fetch("/api/turnos/medico")
         .then(r => r.json())
         .then(turnos => {
@@ -250,7 +316,7 @@
         .catch(console.error);
     }
     function cargarAgendaHoy(){
-      const hoy = new Date().toISOString().slice(0, 10);
+      const hoy = new Date().toLocaleDateString('en-CA'); // formato YYYY-MM-DD en zona local
       document.getElementById("fecha-agenda-medico").value = hoy;
       cargarAgendaMedico();
     }
@@ -259,7 +325,7 @@
       const fechaSeleccionada = document.getElementById("fecha-agenda-medico").value;
       if (!fechaSeleccionada) return;
       
-      const container = document.getElementById("agenda-medico-container");
+      const container = document.getElementById("agenda-content");
       
       // Obtener información del usuario si no la tenemos
       if (!usuarioMedico) {
@@ -275,15 +341,23 @@
     }
 
     function renderizarAgendaMedico(fecha, container){
+      console.log('DEBUG - Fecha recibida:', fecha); // DEBUG
       Promise.all([
         fetch("/api/agenda"),
         fetch(`/api/turnos/dia?fecha=${fecha}`)
       ])
       .then(([agendaRes, turnosRes]) => Promise.all([agendaRes.json(), turnosRes.json()]))
       .then(([agenda, turnos]) => {
-        const fechaObj = new Date(fecha + 'T12:00:00');
+        // const fechaObj = new Date(fecha + 'T12:00:00');
+        // const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
+        // const diaSeleccionado = diasSemana[fechaObj.getDay()];
+        // FIX: evitar desfase de día por zona horaria
+        const [anio, mes, dia] = fecha.split('-');
+        const fechaObj = new Date(Number(anio), Number(mes) - 1, Number(dia));
         const diasSemana = ["DOMINGO", "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO"];
         const diaSeleccionado = diasSemana[fechaObj.getDay()];
+        const fechaFormateada = `${dia}/${mes}/${anio}`;
+        console.log('DEBUG - Fecha procesada:', fechaObj, 'Día calculado:', diaSeleccionado); // DEBUG
         
         // Filtrar turnos del médico
         const turnosMedico = turnos.filter(t => t.medico === usuarioMedico);
@@ -295,14 +369,14 @@
           container.innerHTML = `
             <div class="alert alert-info">
               <i class="bi bi-info-circle"></i> 
-              No tienes horarios configurados para ${diaSeleccionado.toLowerCase()} (${new Date(fecha).toLocaleDateString('es-ES')})
+              No tienes horarios configurados para ${diaSeleccionado.toLowerCase()} (${fechaFormateada})
             </div>
           `;
           return;
         }
         
         let html = `
-          <h6><i class="bi bi-calendar-day"></i> ${diaSeleccionado} - ${new Date(fecha).toLocaleDateString('es-ES')}</h6>
+          <h6><i class="bi bi-calendar-day"></i> ${diaSeleccionado} - ${fechaFormateada}</h6>
           <div class="row">
         `;
         horariosConfigurados.forEach(hora => {
@@ -414,7 +488,41 @@
         });
     }
     
+    function toggleAgenda(){
+      const container = document.getElementById("agenda-medico-container");
+      const btn = document.getElementById("toggle-agenda-btn");
+      const icon = btn.querySelector("i");
+      const text = btn.textContent.trim();
+      
+      if (container.style.display === "none") {
+        // Mostrar agenda
+        container.style.display = "block";
+        icon.className = "bi bi-eye-slash";
+        btn.innerHTML = '<i class="bi bi-eye-slash"></i> Ocultar Agenda';
+        btn.className = "btn btn-sm btn-outline-secondary";
+        
+        // Cargar agenda si hay fecha seleccionada
+        const fechaActual = document.getElementById("fecha-agenda-medico").value;
+        if (fechaActual) {
+          cargarAgendaMedico();
+        } else {
+          cargarAgendaHoy();
+        }
+      } else {
+        // Ocultar agenda
+        container.style.display = "none";
+        icon.className = "bi bi-eye";
+        btn.innerHTML = '<i class="bi bi-eye"></i> Mostrar Agenda';
+        btn.className = "btn btn-sm btn-outline-primary";
+      }
+    }
+
     function mostrarMiAgenda(){
+      // Mostrar agenda si está oculta
+      const container = document.getElementById("agenda-medico-container");
+      if (container.style.display === "none") {
+        toggleAgenda();
+      }
       const fechaActual = document.getElementById("fecha-agenda-medico").value;
       if (fechaActual) {
         cargarAgendaMedico();
@@ -431,24 +539,218 @@
 
     /* === Historias clínicas === */
     function mostrarHistorias(lista){
-      const res=document.getElementById("resultado");
-      res.innerHTML="";
-      if(!lista.length){
-        res.innerHTML="<div class='alert alert-warning'>No se encontraron historias clínicas.</div>";
+       historiasResultado = lista; // Guardar resultados para PDF
+      const res = document.getElementById("resultado");
+      res.innerHTML = "";
+      
+      // Mostrar estadísticas
+      const estadisticas = document.getElementById("estadisticas-busqueda");
+      if (lista.length > 0) {
+        const pacientesUnicos = new Set(lista.map(h => h.dni)).size;
+        document.getElementById("total-resultados").textContent = lista.length;
+        document.getElementById("pacientes-unicos").textContent = pacientesUnicos;
+        estadisticas.style.display = "block";
+      } else {
+        estadisticas.style.display = "none";
+        res.innerHTML = `
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            No se encontraron historias clínicas.
+          </div>
+        `;
         return;
       }
-      lista.forEach(h=>{
-        const card=document.createElement("div");
-        card.className="card-panel";
-        card.innerHTML=`
-          <strong>${h.nombre}</strong> (DNI ${h.dni})<br>
-          Nac: ${h.fecha_nacimiento||"-"} | Consulta: ${h.fecha_consulta||"-"}<br>
-          <em>Dx:</em> ${h.diagnostico}<br>
-          <em>Tx:</em> ${h.tratamiento||"-"}<br>
-          Obs: ${h.observaciones||"-"}<br>
-          Médico: ${h.medico}`;
-        res.appendChild(card);
-      });
+       // Crear contenedor con título
+      const contenedor = document.createElement("div");
+      contenedor.className = "card";
+      contenedor.innerHTML = `
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-file-medical"></i> 
+            Resultados de Búsqueda (${lista.length} historias encontradas)
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row" id="historias-container"></div>
+        </div>
+      `;
+      res.appendChild(contenedor);
+      
+      const historiasContainer = document.getElementById("historias-container");
+      
+      // Cargar datos de pacientes para enriquecer las historias
+      fetch("/api/pacientes")
+        .then(r => r.json())
+        .then(pacientes => {
+          lista.forEach((h, index) => {
+            // Buscar datos del paciente
+            const paciente = pacientes.find(p => p.dni === h.dni);
+            const nombreCompleto = paciente ? `${paciente.nombre} ${paciente.apellido}`.trim() : 'Paciente no encontrado';
+            const fechaNac = paciente?.fecha_nacimiento ? new Date(paciente.fecha_nacimiento).toLocaleDateString('es-ES') : 'No especificada';
+            const edad = paciente?.edad ? `${paciente.edad} años` : 'No especificada';
+            const telefono = paciente?.celular || 'No especificado';
+            
+            const fecha = h.fecha_consulta ? new Date(h.fecha_consulta).toLocaleDateString('es-ES') : 'No especificada';
+            
+            const card = document.createElement("div");
+            card.className = "col-md-6 col-lg-4 mb-3";
+            card.innerHTML = `
+              <div class="card h-100 border-primary">
+                <div class="card-header bg-primary text-white">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                      <i class="bi bi-person-circle"></i> 
+                      ${nombreCompleto}
+                    </h6>
+                    <button class="btn btn-sm btn-light" onclick="descargarHistoriaIndividual(${index})" title="Descargar PDF">
+                      <i class="bi bi-download"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="row mb-2">
+                    <div class="col-6">
+                      <small class="text-muted">DNI:</small><br>
+                      <strong>${h.dni}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Edad:</small><br>
+                      <strong>${edad}</strong>
+                    </div>
+                  </div>
+                  <div class="row mb-2">
+                    <div class="col-6">
+                      <small class="text-muted">Fecha Nac:</small><br>
+                      <strong>${fechaNac}</strong>
+                    </div>
+                    <div class="col-6">
+                      <small class="text-muted">Teléfono:</small><br>
+                      <strong>${telefono}</strong>
+                    </div>
+                  </div>
+                  
+                  <div class="row mb-2">
+                    <div class="col-12">
+                      <small class="text-muted">Fecha Consulta:</small><br>
+                      <strong>${fecha}</strong>
+                    </div>
+                  </div>
+                  
+                  ${h.diagnostico ? `
+                    <div class="mb-2">
+                      <small class="text-muted">Diagnóstico:</small><br>
+                      <strong>${h.diagnostico}</strong>
+                    </div>
+                  ` : ''}
+                  
+                  ${h.tratamiento ? `
+                    <div class="mb-2">
+                      <small class="text-muted">Tratamiento:</small><br>
+                      <strong>${h.tratamiento}</strong>
+                    </div>
+                  ` : ''}
+                  
+                  ${h.observaciones ? `
+                    <div class="mb-2">
+                      <small class="text-muted">Observaciones:</small><br>
+                      <em>${h.observaciones}</em>
+                    </div>
+                  ` : ''}
+                  
+                  ${h.consulta_medica ? `
+                    <div class="mb-2">
+                      <small class="text-muted">Consulta Médica:</small><br>
+                      <em>${h.consulta_medica.substring(0, 100)}${h.consulta_medica.length > 100 ? '...' : ''}</em>
+                    </div>
+                  ` : ''}
+                  <div class="mt-2">
+                    <small class="text-muted">Médico:</small><br>
+                    <strong>${h.medico || 'No especificado'}</strong>
+                  </div>
+                </div>
+                <div class="card-footer">
+                  <button class="btn btn-sm btn-outline-primary" onclick="verHistoriaCompleta('${h.dni}')">
+                    <i class="bi bi-eye"></i> Ver Completa
+                  </button>
+                </div>
+              </div>
+            `;
+            historiasContainer.appendChild(card);
+          });
+        })
+        .catch(error => {
+          console.error("Error al cargar datos de pacientes:", error);
+          // Mostrar historias sin datos de pacientes si hay error
+          lista.forEach((h, index) => {
+            const fecha = h.fecha_consulta ? new Date(h.fecha_consulta).toLocaleDateString('es-ES') : 'No especificada';
+            
+            const card = document.createElement("div");
+            card.className = "col-md-6 col-lg-4 mb-3";
+            card.innerHTML = `
+              <div class="card h-100 border-warning">
+                <div class="card-header bg-warning text-dark">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                      <i class="bi bi-exclamation-triangle"></i> 
+                      DNI: ${h.dni}
+                    </h6>
+                    <button class="btn btn-sm btn-dark" onclick="descargarHistoriaIndividual(${index})" title="Descargar PDF">
+                      <i class="bi bi-download"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="alert alert-warning">
+                    <small>No se pudieron cargar los datos del paciente</small>
+                  </div>
+                  
+                  <div class="mb-2">
+                    <small class="text-muted">Fecha Consulta:</small><br>
+                    <strong>${fecha}</strong>
+                  </div>
+                  
+                  ${h.diagnostico ? `
+                    <div class="mb-2">
+                      <small class="text-muted">Diagnóstico:</small><br>
+                      <strong>${h.diagnostico}</strong>
+                    </div>
+                  ` : ''}
+                  
+                  ${h.tratamiento ? `
+                    <div class="mb-2">
+                      <small class="text-muted">Tratamiento:</small><br>
+                      <strong>${h.tratamiento}</strong>
+                    </div>
+                  ` : ''}
+                   ${h.observaciones ? `
+                    <div class="mb-2">
+                      <small class="text-muted">Observaciones:</small><br>
+                      <em>${h.observaciones}</em>
+                    </div>
+                  ` : ''}
+                  
+                  ${h.consulta_medica ? `
+                    <div class="mb-2">
+                      <small class="text-muted">Consulta Médica:</small><br>
+                      <em>${h.consulta_medica.substring(0, 100)}${h.consulta_medica.length > 100 ? '...' : ''}</em>
+                    </div>
+                  ` : ''}
+                  
+                  <div class="mt-2">
+                    <small class="text-muted">Médico:</small><br>
+                    <strong>${h.medico || 'No especificado'}</strong>
+                  </div>
+                </div>
+                <div class="card-footer">
+                  <button class="btn btn-sm btn-outline-warning" onclick="verHistoriaCompleta('${h.dni}')">
+                    <i class="bi bi-eye"></i> Ver Completa
+                  </button>
+                </div>
+              </div>
+            `;
+            historiasContainer.appendChild(card);
+          });
+        });
     }
 
 
@@ -481,6 +783,237 @@
                            : alert("No se encontraron coincidencias");
         });
     }
+    function limpiarBusqueda(){
+      document.getElementById("dni_buscar").value = "";
+      document.getElementById("apellido_buscar").value = "";
+      document.getElementById("resultado").innerHTML = "";
+      document.getElementById("estadisticas-busqueda").style.display = "none";
+      historiasResultado = [];
+    }
+
+    function verHistoriaCompleta(dni){
+      window.location.href = `/historias?dni=${dni}`;
+    }
+
+    function descargarHistoriaIndividual(index){
+      const historia = historiasResultado[index];
+      if (!historia) return;
+
+      // Obtener datos del paciente
+      fetch("/api/pacientes")
+        .then(r => r.json())
+        .then(pacientes => {
+          const paciente = pacientes.find(p => p.dni === historia.dni);
+          const nombreCompleto = paciente ? `${paciente.nombre} ${paciente.apellido}`.trim() : 'Paciente no encontrado';
+          const fechaNac = paciente?.fecha_nacimiento ? new Date(paciente.fecha_nacimiento).toLocaleDateString('es-ES') : 'No especificada';
+          const edad = paciente?.edad ? `${paciente.edad} años` : 'No especificada';
+          const telefono = paciente?.celular || 'No especificado';
+          const obraSocial = paciente?.obra_social || 'No especificada';
+
+       const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          
+          // Configurar fuente y tamaños
+          doc.setFont("helvetica");
+          doc.setFontSize(20);
+          doc.text("Historia Clínica", 105, 20, { align: "center" });
+          
+          doc.setFontSize(12);
+          doc.text("Datos del Paciente:", 20, 40);
+          doc.setFontSize(10);
+          doc.text(`Nombre: ${nombreCompleto}`, 20, 50);
+          doc.text(`DNI: ${historia.dni}`, 20, 60);
+          doc.text(`Edad: ${edad}`, 20, 70);
+          doc.text(`Fecha de Nacimiento: ${fechaNac}`, 20, 80);
+          doc.text(`Teléfono: ${telefono}`, 20, 90);
+          doc.text(`Obra Social: ${obraSocial}`, 20, 100);
+          
+          doc.setFontSize(12);
+          doc.text("Datos de la Consulta:", 20, 120);
+          doc.setFontSize(10);
+          
+          const fecha = historia.fecha_consulta ? new Date(historia.fecha_consulta).toLocaleDateString('es-ES') : 'No especificada';
+          doc.text(`Fecha de Consulta: ${fecha}`, 20, 130);
+          doc.text(`Médico: ${historia.medico || 'No especificado'}`, 20, 140);
+          
+          let yPosition = 160;
+          
+          if (historia.diagnostico) {
+            doc.setFontSize(12);
+            doc.text("Diagnóstico:", 20, yPosition);
+            yPosition += 5;
+            doc.setFontSize(10);
+            const dxLines = doc.splitTextToSize(historia.diagnostico, 170);
+            doc.text(dxLines, 20, yPosition);
+            yPosition += dxLines.length * 5 + 5;
+          }
+          if (historia.tratamiento) {
+            doc.setFontSize(12);
+            doc.text("Tratamiento:", 20, yPosition);
+            yPosition += 5;
+            doc.setFontSize(10);
+            const txLines = doc.splitTextToSize(historia.tratamiento, 170);
+            doc.text(txLines, 20, yPosition);
+            yPosition += txLines.length * 5 + 5;
+          }
+          
+          if (historia.observaciones) {
+            doc.setFontSize(12);
+            doc.text("Observaciones:", 20, yPosition);
+            yPosition += 5;
+            doc.setFontSize(10);
+            const obsLines = doc.splitTextToSize(historia.observaciones, 170);
+            doc.text(obsLines, 20, yPosition);
+            yPosition += obsLines.length * 5 + 5;
+          }
+          
+          if (historia.consulta_medica) {
+            doc.setFontSize(12);
+            doc.text("Consulta Médica:", 20, yPosition);
+            yPosition += 5;
+            doc.setFontSize(10);
+            const consultaLines = doc.splitTextToSize(historia.consulta_medica, 170);
+            doc.text(consultaLines, 20, yPosition);
+          }
+          
+          // Guardar PDF
+          const fileName = `historia_${historia.dni}_${fecha.replace(/\//g, '-')}.pdf`;
+          doc.save(fileName);
+        })
+        .catch(error => {
+          console.error("Error al obtener datos del paciente:", error);
+          // Generar PDF sin datos del paciente si hay error
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          
+          doc.setFont("helvetica");
+          doc.setFontSize(20);
+          doc.text("Historia Clínica", 105, 20, { align: "center" });
+          doc.setFontSize(12);
+          doc.text("Datos del Paciente:", 20, 40);
+          doc.setFontSize(10);
+          doc.text(`DNI: ${historia.dni}`, 20, 50);
+          doc.text(`Nombre: No disponible`, 20, 60);
+          
+          doc.setFontSize(12);
+          doc.text("Datos de la Consulta:", 20, 80);
+          doc.setFontSize(10);
+          
+          const fecha = historia.fecha_consulta ? new Date(historia.fecha_consulta).toLocaleDateString('es-ES') : 'No especificada';
+          doc.text(`Fecha de Consulta: ${fecha}`, 20, 90);
+          doc.text(`Médico: ${historia.medico || 'No especificado'}`, 20, 100);
+          
+          let yPosition = 120;
+          
+          if (historia.diagnostico) {
+            doc.setFontSize(12);
+            doc.text("Diagnóstico:", 20, yPosition);
+            yPosition += 5;
+            doc.setFontSize(10);
+            const dxLines = doc.splitTextToSize(historia.diagnostico, 170);
+            doc.text(dxLines, 20, yPosition);
+            yPosition += dxLines.length * 5 + 5;
+          }
+          
+          if (historia.tratamiento) {
+            doc.setFontSize(12);
+            doc.text("Tratamiento:", 20, yPosition);
+            yPosition += 5;
+            doc.setFontSize(10);
+            const txLines = doc.splitTextToSize(historia.tratamiento, 170);
+            doc.text(txLines, 20, yPosition);
+            yPosition += txLines.length * 5 + 5;
+          }
+          
+          if (historia.observaciones) {
+            doc.setFontSize(12);
+            doc.text("Observaciones:", 20, yPosition);
+            yPosition += 5;
+            doc.setFontSize(10);
+            const obsLines = doc.splitTextToSize(historia.observaciones, 170);
+            doc.text(obsLines, 20, yPosition);
+            yPosition += obsLines.length * 5 + 5;
+          }
+          if (historia.consulta_medica) {
+            doc.setFontSize(12);
+            doc.text("Consulta Médica:", 20, yPosition);
+            yPosition += 5;
+            doc.setFontSize(10);
+            const consultaLines = doc.splitTextToSize(historia.consulta_medica, 170);
+            doc.text(consultaLines, 20, yPosition);
+          }
+          
+          const fileName = `historia_${historia.dni}_${fecha.replace(/\//g, '-')}.pdf`;
+          doc.save(fileName);
+        });
+    
+    }
+
+    function descargarResultadosPDF(){
+      if (historiasResultado.length === 0) {
+        alert("No hay resultados para descargar");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Título
+      doc.setFont("helvetica");
+      doc.setFontSize(20);
+      doc.text("Reporte de Historias Clínicas", 105, 20, { align: "center" });
+      
+      doc.setFontSize(10);
+      doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 20, 30);
+      doc.text(`Total de historias: ${historiasResultado.length}`, 20, 40);
+      doc.text(`Pacientes únicos: ${new Set(historiasResultado.map(h => h.dni)).size}`, 20, 50);
+      
+      // Historial de consultas
+      let yPosition = 70;
+      doc.setFontSize(14);
+      doc.text("Historias Clínicas:", 20, yPosition);
+      yPosition += 10;
+      historiasResultado.forEach((historia, index) => {
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        const fecha = historia.fecha_consulta ? new Date(historia.fecha_consulta).toLocaleDateString('es-ES') : 'No especificada';
+        doc.setFontSize(12);
+        doc.text(`${index + 1}. ${historia.nombre || 'Sin nombre'} (DNI: ${historia.dni}) - ${fecha}`, 20, yPosition);
+        yPosition += 5;
+        doc.setFontSize(10);
+        doc.text(`Médico: ${historia.medico || 'No especificado'}`, 20, yPosition);
+        yPosition += 5;
+        
+        if (historia.diagnostico) {
+          doc.text(`Diagnóstico: ${historia.diagnostico}`, 20, yPosition);
+          yPosition += 5;
+        }
+        
+        if (historia.tratamiento) {
+          doc.text(`Tratamiento: ${historia.tratamiento}`, 20, yPosition);
+          yPosition += 5;
+        }
+        
+        yPosition += 5; // Espacio entre historias
+      });
+      
+      // Guardar PDF
+      const fileName = `reporte_historias_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+    }
+
+
+    /* === Modal para crear historia clínica === */
+    function abrirModalHistoriaClinica() {
+      const dni = prompt("Ingrese el DNI del paciente para crear la historia clínica:");
+      if (dni && dni.trim()) {
+        window.location.href = `/historias?dni=${dni.trim()}`;
+      }
+    }
+
   </script>
 </body>
 </html>

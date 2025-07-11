@@ -118,5 +118,25 @@
         "obra_social": "IOMA",
         "numero_obra_social": "2343534644",
         "celular": "14123423423"
+    },
+    {
+        "dni": "1232423423",
+        "nombre": "norberto",
+        "apellido": "suazo",
+        "fecha_nacimiento": "2005-03-12",
+        "edad": 20,
+        "obra_social": "swiss medical",
+        "numero_obra_social": "34567645687",
+        "celular": "656789768"
+    },
+    {
+        "dni": "123456",
+        "nombre": "esrdtfyguh",
+        "apellido": "wertyuio",
+        "fecha_nacimiento": "2000-03-12",
+        "edad": 25,
+        "obra_social": "uyy",
+        "numero_obra_social": "3455678",
+        "celular": "32q34567"
     }
 ]
