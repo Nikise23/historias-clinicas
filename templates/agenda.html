@@ -232,6 +232,89 @@
     </div>
   </div>
 
+  <!-- Tabla editable de agenda para secretaria -->
+{% if session['rol'] == 'secretaria' %}
+<div class="card mb-4">
+  <div class="card-header bg-primary text-white">
+    <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Editar Agenda de Médicos</h5>
+    <small>Modifica los horarios de cada médico y día. Usa coma para separar los horarios (ej: 14:05, 14:10, ...)</small>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle text-center" id="tabla-agenda-editable">
+        <thead class="table-light">
+          <tr>
+            <th>Médico</th>
+            <th>LUNES</th>
+            <th>MARTES</th>
+            <th>MIERCOLES</th>
+            <th>JUEVES</th>
+            <th>VIERNES</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-agenda-editable"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+function renderTablaEditableAgenda() {
+  fetch('/api/agenda')
+    .then(r => r.json())
+    .then(agenda => {
+      const tbody = document.getElementById('tbody-agenda-editable');
+      tbody.innerHTML = '';
+      for (const medico in agenda) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${medico}</strong></td>
+          ${['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES'].map(dia => `
+            <td><input type="text" class="form-control form-control-sm" id="input-${medico}-${dia}" value="${(agenda[medico][dia]||[]).join(', ')}"></td>
+          `).join('')}
+          <td>
+            <button class="btn btn-success btn-sm me-1" onclick="guardarHorarios('${medico}')"><i class="bi bi-save"></i> Guardar</button>
+            <button class="btn btn-secondary btn-sm" onclick="restaurarHorarios('${medico}')"><i class="bi bi-arrow-clockwise"></i> Restaurar</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      }
+      // Guardar copia original para restaurar
+      window._agendaOriginal = JSON.parse(JSON.stringify(agenda));
+    });
+}
+function guardarHorarios(medico) {
+  const dias = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES'];
+  for (const dia of dias) {
+    const val = document.getElementById(`input-${medico}-${dia}`).value.trim();
+    const horarios = val ? val.split(',').map(h=>h.trim()).filter(Boolean) : [];
+    fetch(`/api/agenda/${encodeURIComponent(medico)}/${dia}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ horarios })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.ok || res.mensaje) {
+        alert(`Horarios de ${medico} (${dia}) guardados correctamente.`);
+      } else {
+        alert('Error al guardar horarios: ' + (res.error || JSON.stringify(res)));
+      }
+    });
+  }
+}
+function restaurarHorarios(medico) {
+  const agenda = window._agendaOriginal;
+  const dias = ['LUNES','MARTES','MIERCOLES','JUEVES','VIERNES'];
+  for (const dia of dias) {
+    document.getElementById(`input-${medico}-${dia}`).value = (agenda[medico][dia]||[]).join(', ');
+  }
+}
+document.addEventListener('DOMContentLoaded', renderTablaEditableAgenda);
+</script>
+{% endif %}
+<!-- Fin tabla editable -->
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     let agenda = {};
