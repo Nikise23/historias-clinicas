@@ -1,7 +1,7 @@
 [
     {
         "usuario": "Marianela Bobbiesi",
-        "contrasena": "scrypt:32768:8:1$wAF4AIMxtW75Y7ho$f6928ae4e64b426779bd3231d247231ab5f683e4f1d5f9778810aa815e5dd0c7068bdaf0c1e8399bf0fb7c98de0e0a491d1c8965d3143684dcb77e0cc893cf77",
+        "contrasena": "scrypt:32768:8:1$W8MfCPRlhlcvPHxE$f0da2de617759b3b43c8c2d5827d6db6e525b04bf3ab9054c2ce75c1fecbbcae14e599f18435c976a835323059c06f644216cf36f1e97a44e7bbfb948495589e",
         "rol": "medico"
     },
     {

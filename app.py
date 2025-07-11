@@ -64,6 +64,8 @@ def validar_historia(data):
         if fecha:
             try:
                 f = datetime.strptime(fecha, "%Y-%m-%d")
+                # Convertir a timezone-aware para comparar
+                f = f.replace(tzinfo=timezone_ar)
                 ahora = datetime.now(timezone_ar)
                 if f > ahora:
                     return False, f"La fecha '{campo}' no puede ser futura."
