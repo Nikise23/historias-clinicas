@@ -548,8 +548,14 @@
         }
 
         function mostrarDetalleDia(fecha, fechaFormateada) {
+            // Usar la API específica del administrador
             fetch(`/api/pagos/estadisticas-admin?mes=${fecha.substring(0, 7)}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(estadisticas => {
                     const datosDia = estadisticas.detalle_por_dia[fecha];
                     if (!datosDia) {
@@ -580,7 +586,7 @@
                 })
                 .catch(error => {
                     console.error('Error cargando detalle del día:', error);
-                    alert('Error al cargar el detalle del día');
+                    alert('Error al cargar el detalle del día: ' + error.message);
                 });
         }
         
