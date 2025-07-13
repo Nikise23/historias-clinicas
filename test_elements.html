@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Elements</title>
+</head>
+<body>
+    <h1>Test de Elementos</h1>
+    
+    <!-- Daily Detail -->
+    <div class="table-container mt-3" id="detalle-dia" style="display: none;">
+        <h6 class="mb-2" id="titulo-detalle-dia">Detalle del Día</h6>
+        <button class="btn-admin btn-danger-admin" onclick="cerrarDetalleDia()">
+            <i class="bi bi-x"></i>
+            Cerrar
+        </button>
+        <div class="table-responsive mt-3">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Paciente</th>
+                        <th>Monto</th>
+                        <th>Obra Social</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-detalle-dia">
+                    <!-- Se cargan dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <button onclick="testElements()">Probar Elementos</button>
+    <button onclick="testMostrarDetalle()">Probar mostrarDetalleDia</button>
+
+    <script>
+        function testElements() {
+            const tituloElement = document.getElementById('titulo-detalle-dia');
+            const tbodyElement = document.getElementById('tabla-detalle-dia');
+            const detalleElement = document.getElementById('detalle-dia');
+            
+            console.log('Elementos encontrados:', {
+                titulo: tituloElement,
+                tbody: tbodyElement,
+                detalle: detalleElement
+            });
+            
+            alert(`Elementos encontrados:
+- titulo: ${!!tituloElement}
+- tbody: ${!!tbodyElement}
+- detalle: ${!!detalleElement}`);
+        }
+        
+        function testMostrarDetalle() {
+            // Simular la función mostrarDetalleDia
+            const tituloElement = document.getElementById('titulo-detalle-dia');
+            const tbodyElement = document.getElementById('tabla-detalle-dia');
+            const detalleElement = document.getElementById('detalle-dia');
+            
+            if (!tituloElement || !tbodyElement || !detalleElement) {
+                console.error('Elementos no encontrados:', {
+                    titulo: !!tituloElement,
+                    tbody: !!tbodyElement,
+                    detalle: !!detalleElement
+                });
+                alert('Error: Elementos de la interfaz no encontrados');
+                return;
+            }
+            
+            // Simular datos
+            tituloElement.textContent = 'Detalle del 2025-07-11';
+            tbodyElement.innerHTML = '<tr><td>Paciente Test</td><td>$1000</td><td>Obra Social</td></tr>';
+            detalleElement.style.display = 'block';
+            
+            alert('Función ejecutada correctamente');
+        }
+        
+        function cerrarDetalleDia() {
+            document.getElementById('detalle-dia').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

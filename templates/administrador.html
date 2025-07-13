@@ -547,17 +547,30 @@
             });
         }
 
-        function mostrarDetalleDia(fecha, fechaFormateada) {
+                function mostrarDetalleDia(fecha, fechaFormateada) {
+            console.log('Función mostrarDetalleDia llamada con:', { fecha, fechaFormateada });
+            
             // Verificar que los elementos existen antes de usarlos
             const tituloElement = document.getElementById('titulo-detalle-dia');
             const tbodyElement = document.getElementById('tabla-detalle-dia');
             const detalleElement = document.getElementById('detalle-dia');
+            
+            console.log('Elementos encontrados:', {
+                titulo: tituloElement,
+                tbody: tbodyElement,
+                detalle: detalleElement
+            });
             
             if (!tituloElement || !tbodyElement || !detalleElement) {
                 console.error('Elementos no encontrados:', {
                     titulo: !!tituloElement,
                     tbody: !!tbodyElement,
                     detalle: !!detalleElement
+                });
+                console.log('Buscando elementos con IDs:', {
+                    titulo: 'titulo-detalle-dia',
+                    tbody: 'tabla-detalle-dia',
+                    detalle: 'detalle-dia'
                 });
                 alert('Error: Elementos de la interfaz no encontrados');
                 return;
