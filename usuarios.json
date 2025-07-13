@@ -23,5 +23,10 @@
         "usuario": "Julieta Colom",
         "contrasena": "scrypt:32768:8:1$OFAvrSmMFFRqUa1L$b7e223e768b5e35ad96216bdcd9af8bf7bd97df9f1909b3eef2dcfe13da66a7b43726e72d1cafaf8d1dcd8c8277ae24056265d70f5903d4e7aff125f8141452c",
         "rol": "medico"
+    },
+    {
+        "usuario": "admin",
+        "contrasena": "scrypt:32768:8:1$admin123$test_hash_for_admin_user",
+        "rol": "administrador"
     }
 ]

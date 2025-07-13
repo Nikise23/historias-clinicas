@@ -124,6 +124,8 @@ def login():
                 # Redirigir según el rol
                 if u.get("rol") == "secretaria":
                     return redirect(url_for("vista_secretaria"))
+                elif u.get("rol") == "administrador":
+                    return redirect(url_for("vista_administrador"))
                 else:
                     return redirect(url_for("inicio"))
         return render_template("login.html", error="Usuario o contraseña incorrectos")
@@ -1044,6 +1046,108 @@ def limpiar_turnos_vencidos():
             nuevos.append(t)
     guardar_json(TURNOS_FILE, nuevos)
     return jsonify({"eliminados": eliminados, "ok": True})
+
+# ========================== ADMINISTRADOR ============================
+
+@app.route("/administrador")
+@login_requerido
+@rol_requerido("administrador")
+def vista_administrador():
+    return render_template("administrador.html")
+
+@app.route("/api/pagos/estadisticas-admin", methods=["GET"])
+@login_requerido
+@rol_requerido("administrador")
+def obtener_estadisticas_pagos_admin():
+    """Obtener estadísticas de pagos para administradores"""
+    mes = request.args.get("mes")
+    if not mes:
+        mes = datetime.now().strftime("%Y-%m")
+    
+    pagos = cargar_json(PAGOS_FILE)
+    pacientes = cargar_json(PACIENTES_FILE)
+    
+    # Filtrar pagos del mes
+    pagos_mes = [p for p in pagos if p.get("fecha", "").startswith(mes)]
+    
+    # Calcular estadísticas
+    total_mes = sum(p.get("monto", 0) for p in pagos_mes)
+    pagos_particulares = len([p for p in pagos_mes if p.get("monto", 0) > 0])
+    pagos_obra_social = len([p for p in pagos_mes if p.get("monto", 0) == 0])
+    cantidad_pagos_mes = len(pagos_mes)
+    
+    # Agrupar por día
+    detalle_por_dia = {}
+    for pago in pagos_mes:
+        fecha = pago.get("fecha")
+        if fecha not in detalle_por_dia:
+            detalle_por_dia[fecha] = {
+                "cantidad": 0,
+                "monto": 0,
+                "pacientes": []
+            }
+        
+        detalle_por_dia[fecha]["cantidad"] += 1
+        detalle_por_dia[fecha]["monto"] += pago.get("monto", 0)
+        
+        # Buscar datos del paciente
+        paciente = next((p for p in pacientes if p["dni"] == pago.get("dni_paciente")), {})
+        detalle_por_dia[fecha]["pacientes"].append({
+            "nombre": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
+            "monto": pago.get("monto", 0),
+            "obra_social": paciente.get("obra_social", "")
+        })
+    
+    return jsonify({
+        "total_mes": total_mes,
+        "pagos_particulares": pagos_particulares,
+        "pagos_obra_social": pagos_obra_social,
+        "cantidad_pagos_mes": cantidad_pagos_mes,
+        "detalle_por_dia": detalle_por_dia
+    })
+
+@app.route("/api/pagos/exportar-admin", methods=["GET"])
+@login_requerido
+@rol_requerido("administrador")
+def exportar_pagos_csv_admin():
+    """Exportar pagos a CSV para administradores"""
+    mes = request.args.get("mes")
+    if not mes:
+        mes = datetime.now().strftime("%Y-%m")
+    
+    pagos = cargar_json(PAGOS_FILE)
+    pacientes = cargar_json(PACIENTES_FILE)
+    
+    # Filtrar pagos del mes
+    pagos_mes = [p for p in pagos if p.get("fecha", "").startswith(mes)]
+    
+    # Crear CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Fecha', 'DNI', 'Nombre', 'Apellido', 'Monto', 'Obra Social', 'Observaciones'])
+    
+    for pago in pagos_mes:
+        paciente = next((p for p in pacientes if p["dni"] == pago.get("dni_paciente")), {})
+        writer.writerow([
+            pago.get("fecha", ""),
+            pago.get("dni_paciente", ""),
+            paciente.get("nombre", ""),
+            paciente.get("apellido", ""),
+            pago.get("monto", 0),
+            paciente.get("obra_social", ""),
+            pago.get("observaciones", "")
+        ])
+    
+    output.seek(0)
+    return make_response(
+        output.getvalue(),
+        200,
+        {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': f'attachment; filename=pagos_{mes}.csv'
+        }
+    )
+
 # ====================================================
 
 

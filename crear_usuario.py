@@ -46,10 +46,10 @@ def crear_usuario():
 
     # rol
     while True:
-        rol = input_no_vacio("Rol (medico / secretaria): ").lower()
-        if rol in ("medico", "secretaria"):
+        rol = input_no_vacio("Rol (medico / secretaria / administrador): ").lower()
+        if rol in ("medico", "secretaria", "administrador"):
             break
-        print("❌ Rol inválido. Debe ser 'medico' o 'secretaria'.")
+        print("❌ Rol inválido. Debe ser 'medico', 'secretaria' o 'administrador'.")
 
     usuarios = cargar_usuarios()
     if any(u["usuario"] == usuario for u in usuarios):
