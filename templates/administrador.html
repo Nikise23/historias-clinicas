@@ -548,6 +548,21 @@
         }
 
         function mostrarDetalleDia(fecha, fechaFormateada) {
+            // Verificar que los elementos existen antes de usarlos
+            const tituloElement = document.getElementById('titulo-detalle-dia');
+            const tbodyElement = document.getElementById('tabla-detalle-dia');
+            const detalleElement = document.getElementById('detalle-dia');
+            
+            if (!tituloElement || !tbodyElement || !detalleElement) {
+                console.error('Elementos no encontrados:', {
+                    titulo: !!tituloElement,
+                    tbody: !!tbodyElement,
+                    detalle: !!detalleElement
+                });
+                alert('Error: Elementos de la interfaz no encontrados');
+                return;
+            }
+            
             // Usar la API específica del administrador
             fetch(`/api/pagos/estadisticas-admin?mes=${fecha.substring(0, 7)}`)
                 .then(response => {
@@ -563,11 +578,13 @@
                         return;
                     }
                     
-                    document.getElementById('titulo-detalle-dia').textContent = `Detalle del ${fechaFormateada}`;
+                    // Actualizar título
+                    tituloElement.textContent = `Detalle del ${fechaFormateada}`;
                     
-                    const tbody = document.getElementById('tabla-detalle-dia');
-                    tbody.innerHTML = '';
+                    // Limpiar tabla
+                    tbodyElement.innerHTML = '';
                     
+                    // Agregar filas de pacientes
                     datosDia.pacientes.forEach(paciente => {
                         const row = document.createElement('tr');
                         const montoTexto = paciente.monto === 0 ? 'Obra Social' : `$${paciente.monto}`;
@@ -578,11 +595,12 @@
                             <td class="${montoColor}"><strong>${montoTexto}</strong></td>
                             <td>${paciente.obra_social || '-'}</td>
                         `;
-                        tbody.appendChild(row);
+                        tbodyElement.appendChild(row);
                     });
                     
-                    document.getElementById('detalle-dia').style.display = 'block';
-                    document.getElementById('detalle-dia').scrollIntoView({ behavior: 'smooth' });
+                    // Mostrar sección de detalle
+                    detalleElement.style.display = 'block';
+                    detalleElement.scrollIntoView({ behavior: 'smooth' });
                 })
                 .catch(error => {
                     console.error('Error cargando detalle del día:', error);
