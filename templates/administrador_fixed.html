@@ -330,6 +330,53 @@
                 </div>
             </div>
 
+            <!-- Payment Type Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card" style="border-left-color: #28a745;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Pagos en Efectivo</h6>
+                            <h3 class="mb-0" id="total-efectivo">$0</h3>
+                            <small class="text-muted" id="cantidad-efectivo">0 pagos</small>
+                        </div>
+                        <i class="bi bi-cash icon text-success"></i>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="border-left-color: #17a2b8;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Transferencias</h6>
+                            <h3 class="mb-0" id="total-transferencia">$0</h3>
+                            <small class="text-muted" id="cantidad-transferencia">0 pagos</small>
+                        </div>
+                        <i class="bi bi-bank icon text-info"></i>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="border-left-color: #6f42c1;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Obra Social</h6>
+                            <h3 class="mb-0" id="total-obra-social">$0</h3>
+                            <small class="text-muted" id="cantidad-obra-social">0 consultas</small>
+                        </div>
+                        <i class="bi bi-shield-check icon text-purple"></i>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="border-left-color: #fd7e14;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Recaudado</h6>
+                            <h3 class="mb-0" id="total-recaudado">$0</h3>
+                            <small class="text-muted">Efectivo + Transferencias</small>
+                        </div>
+                        <i class="bi bi-calculator icon text-warning"></i>
+                    </div>
+                </div>
+            </div>
+
             <!-- Reports Section -->
             <div class="report-section">
                 <h2 class="section-title">
@@ -406,6 +453,7 @@
                                 <tr>
                                     <th>Paciente</th>
                                     <th>Monto</th>
+                                    <th>Tipo de Pago</th>
                                     <th>Obra Social</th>
                                 </tr>
                             </thead>
@@ -506,6 +554,16 @@
                 document.getElementById('pagos-particulares').textContent = estadisticas.pagos_particulares;
                 document.getElementById('pagos-obra-social').textContent = estadisticas.pagos_obra_social;
                 
+                // Actualizar estadísticas por tipo de pago
+                document.getElementById('total-efectivo').textContent = `$${estadisticas.total_efectivo || 0}`;
+                document.getElementById('total-transferencia').textContent = `$${estadisticas.total_transferencia || 0}`;
+                document.getElementById('total-obra-social').textContent = `$${estadisticas.total_obra_social || 0}`;
+                document.getElementById('total-recaudado').textContent = `$${(estadisticas.total_efectivo || 0) + (estadisticas.total_transferencia || 0)}`;
+                
+                document.getElementById('cantidad-efectivo').textContent = `${estadisticas.pagos_efectivo || 0} pagos`;
+                document.getElementById('cantidad-transferencia').textContent = `${estadisticas.pagos_transferencia || 0} pagos`;
+                document.getElementById('cantidad-obra-social').textContent = `${estadisticas.pagos_obra_social_count || 0} consultas`;
+                
                 // Cargar tabla de ingresos diarios
                 cargarTablaIngresosDiarios(estadisticas.detalle_por_dia);
                 
@@ -578,9 +636,21 @@
                         const montoTexto = paciente.monto === 0 ? 'Obra Social' : `$${paciente.monto}`;
                         const montoColor = paciente.monto === 0 ? 'text-info' : 'text-success';
                         
+                        // Determinar tipo de pago y su badge
+                        let tipoPagoBadge = '';
+                        if (paciente.monto === 0) {
+                            tipoPagoBadge = '<span class="badge bg-success">Obra Social</span>';
+                        } else {
+                            const tipoPago = paciente.tipo_pago || 'efectivo';
+                            const badgeClass = tipoPago === 'efectivo' ? 'bg-primary' : 'bg-info';
+                            const badgeText = tipoPago === 'efectivo' ? 'Efectivo' : 'Transferencia';
+                            tipoPagoBadge = `<span class="badge ${badgeClass}">${badgeText}</span>`;
+                        }
+                        
                         row.innerHTML = `
                             <td>${paciente.nombre}</td>
                             <td class="${montoColor}"><strong>${montoTexto}</strong></td>
+                            <td>${tipoPagoBadge}</td>
                             <td>${paciente.obra_social || '-'}</td>
                         `;
                         tbody.appendChild(row);

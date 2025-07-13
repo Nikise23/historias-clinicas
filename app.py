@@ -599,6 +599,15 @@ def registrar_pago():
     except (ValueError, TypeError):
         return jsonify({"error": "Monto inválido"}), 400
     
+    # Validar tipo de pago (solo para pagos particulares)
+    tipo_pago = data.get("tipo_pago", "efectivo")
+    if monto > 0 and tipo_pago not in ["efectivo", "transferencia"]:
+        return jsonify({"error": "Tipo de pago inválido. Debe ser 'efectivo' o 'transferencia'"}), 400
+    
+    # Para obra social, el tipo de pago siempre es "obra_social"
+    if monto == 0:
+        tipo_pago = "obra_social"
+    
     # Verificar que el paciente existe
     pacientes = cargar_json(PACIENTES_FILE)
     paciente = next((p for p in pacientes if p["dni"] == data["dni_paciente"]), None)
@@ -621,7 +630,8 @@ def registrar_pago():
         "fecha": data["fecha"],
         "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": data.get("observaciones", ""),
-        "obra_social": paciente.get("obra_social", "")
+        "obra_social": paciente.get("obra_social", ""),
+        "tipo_pago": tipo_pago
     }
     
     pagos.append(nuevo_pago)
@@ -661,6 +671,14 @@ def obtener_estadisticas_pagos():
     pagos_mes = [p for p in pagos if p["fecha"].startswith(mes_param)]
     total_mes = sum(p["monto"] for p in pagos_mes)
     
+    # Estadísticas por tipo de pago del día
+    pagos_efectivo_hoy = [p for p in pagos_hoy if p.get("tipo_pago") == "efectivo"]
+    pagos_transferencia_hoy = [p for p in pagos_hoy if p.get("tipo_pago") == "transferencia"]
+    pagos_obra_social_hoy = [p for p in pagos_hoy if p.get("tipo_pago") == "obra_social"]
+    
+    total_efectivo_hoy = sum(p["monto"] for p in pagos_efectivo_hoy)
+    total_transferencia_hoy = sum(p["monto"] for p in pagos_transferencia_hoy)
+    total_obra_social_hoy = sum(p["monto"] for p in pagos_obra_social_hoy)
 
     # Estadísticas por día del mes
     pagos_por_dia = {}
@@ -677,7 +695,8 @@ def obtener_estadisticas_pagos():
         pagos_por_dia[dia]["pacientes"].append({
             "nombre": pago["nombre_paciente"],
             "monto": pago["monto"],
-            "obra_social": pago.get("obra_social", "")
+            "obra_social": pago.get("obra_social", ""),
+            "tipo_pago": pago.get("tipo_pago", "efectivo")
         })
          
         if pago["monto"] == 0:
@@ -697,7 +716,14 @@ def obtener_estadisticas_pagos():
         "pagos_particulares": pagos_particulares,
         "fecha": hoy.isoformat(),
         "mes_consultado": mes_param,
-        "detalle_por_dia": pagos_por_dia_ordenados
+        "detalle_por_dia": pagos_por_dia_ordenados,
+        # Nuevas estadísticas por tipo de pago
+        "pagos_efectivo_hoy": len(pagos_efectivo_hoy),
+        "pagos_transferencia_hoy": len(pagos_transferencia_hoy),
+        "pagos_obra_social_hoy": len(pagos_obra_social_hoy),
+        "total_efectivo_hoy": total_efectivo_hoy,
+        "total_transferencia_hoy": total_transferencia_hoy,
+        "total_obra_social_hoy": total_obra_social_hoy
     })
 @app.route("/api/pagos/exportar", methods=["GET"])
 @login_requerido
@@ -973,6 +999,13 @@ def cobrar_y_mover_a_sala():
     if pago_existente:
         return jsonify({"error": "Ya existe un pago registrado para este paciente en esta fecha"}), 400
     
+    # Determinar tipo de pago
+    tipo_pago = data.get("tipo_pago", "efectivo")
+    if monto == 0:
+        tipo_pago = "obra_social"
+    elif tipo_pago not in ["efectivo", "transferencia"]:
+        return jsonify({"error": "Tipo de pago inválido"}), 400
+    
     # Registrar el pago
     nuevo_pago = {
         "id": len(pagos) + 1,
@@ -982,7 +1015,8 @@ def cobrar_y_mover_a_sala():
         "fecha": fecha,
         "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": observaciones,
-        "obra_social": paciente.get("obra_social", "")
+        "obra_social": paciente.get("obra_social", ""),
+        "tipo_pago": tipo_pago
     }
     
     pagos.append(nuevo_pago)
@@ -1070,11 +1104,20 @@ def obtener_estadisticas_pagos_admin():
     # Filtrar pagos del mes
     pagos_mes = [p for p in pagos if p.get("fecha", "").startswith(mes)]
     
-    # Calcular estadísticas
+    # Calcular estadísticas generales
     total_mes = sum(p.get("monto", 0) for p in pagos_mes)
     pagos_particulares = len([p for p in pagos_mes if p.get("monto", 0) > 0])
     pagos_obra_social = len([p for p in pagos_mes if p.get("monto", 0) == 0])
     cantidad_pagos_mes = len(pagos_mes)
+    
+    # Estadísticas por tipo de pago
+    pagos_efectivo = [p for p in pagos_mes if p.get("tipo_pago") == "efectivo"]
+    pagos_transferencia = [p for p in pagos_mes if p.get("tipo_pago") == "transferencia"]
+    pagos_obra_social_list = [p for p in pagos_mes if p.get("tipo_pago") == "obra_social"]
+    
+    total_efectivo = sum(p.get("monto", 0) for p in pagos_efectivo)
+    total_transferencia = sum(p.get("monto", 0) for p in pagos_transferencia)
+    total_obra_social = sum(p.get("monto", 0) for p in pagos_obra_social_list)
     
     # Agrupar por día
     detalle_por_dia = {}
@@ -1095,7 +1138,8 @@ def obtener_estadisticas_pagos_admin():
         detalle_por_dia[fecha]["pacientes"].append({
             "nombre": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
             "monto": pago.get("monto", 0),
-            "obra_social": paciente.get("obra_social", "")
+            "obra_social": paciente.get("obra_social", ""),
+            "tipo_pago": pago.get("tipo_pago", "efectivo")
         })
     
     return jsonify({
@@ -1103,7 +1147,14 @@ def obtener_estadisticas_pagos_admin():
         "pagos_particulares": pagos_particulares,
         "pagos_obra_social": pagos_obra_social,
         "cantidad_pagos_mes": cantidad_pagos_mes,
-        "detalle_por_dia": detalle_por_dia
+        "detalle_por_dia": detalle_por_dia,
+        # Nuevas estadísticas por tipo de pago
+        "pagos_efectivo": len(pagos_efectivo),
+        "pagos_transferencia": len(pagos_transferencia),
+        "pagos_obra_social_count": len(pagos_obra_social_list),
+        "total_efectivo": total_efectivo,
+        "total_transferencia": total_transferencia,
+        "total_obra_social": total_obra_social
     })
 
 @app.route("/api/pagos/exportar-admin", methods=["GET"])
