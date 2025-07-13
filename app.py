@@ -463,7 +463,7 @@ def obtener_turnos_medico():
 
 @app.route("/secretaria")
 @login_requerido
-@rol_requerido("secretaria")
+@rol_permitido(["secretaria", "administrador"])
 def vista_secretaria():
     return render_template("secretaria.html")
 
