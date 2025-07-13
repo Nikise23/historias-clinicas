@@ -463,19 +463,6 @@
             const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
             document.getElementById('mes-selector').value = mesActual;
             cargarIngresosMes();
-            
-            // Verificar que los elementos existen después de que el DOM esté cargado
-            setTimeout(() => {
-                const tituloElement = document.getElementById('titulo-detalle-dia');
-                const tbodyElement = document.getElementById('tabla-detalle-dia');
-                const detalleElement = document.getElementById('detalle-dia');
-                
-                console.log('Verificación DOM cargado:', {
-                    titulo: !!tituloElement,
-                    tbody: !!tbodyElement,
-                    detalle: !!detalleElement
-                });
-            }, 1000);
         });
 
         async function cargarInfoUsuario() {
@@ -563,97 +550,50 @@
         function mostrarDetalleDia(fecha, fechaFormateada) {
             console.log('Función mostrarDetalleDia llamada con:', { fecha, fechaFormateada });
             
-            // Verificar si el documento está completamente cargado
-            if (document.readyState !== 'complete') {
-                console.log('Documento no completamente cargado, esperando...');
-                document.addEventListener('DOMContentLoaded', () => {
-                    setTimeout(() => mostrarDetalleDia(fecha, fechaFormateada), 500);
-                });
-                return;
-            }
-            
-            // Función para esperar a que los elementos estén disponibles
-            function waitForElements() {
-                const tituloElement = document.getElementById('titulo-detalle-dia');
-                const tbodyElement = document.getElementById('tabla-detalle-dia');
-                const detalleElement = document.getElementById('detalle-dia');
-                
-                console.log('Buscando elementos:', {
-                    titulo: !!tituloElement,
-                    tbody: !!tbodyElement,
-                    detalle: !!detalleElement
-                });
-                
-                // Verificar si los elementos están en el DOM
-                if (!tituloElement) {
-                    console.log('Elemento titulo-detalle-dia no encontrado');
-                    console.log('Elementos con ID similar:', document.querySelectorAll('[id*="titulo"]));
-                }
-                if (!tbodyElement) {
-                    console.log('Elemento tabla-detalle-dia no encontrado');
-                    console.log('Elementos con ID similar:', document.querySelectorAll('[id*="tabla"]'));
-                }
-                if (!detalleElement) {
-                    console.log('Elemento detalle-dia no encontrado');
-                    console.log('Elementos con ID similar:', document.querySelectorAll('[id*="detalle"]'));
-                }
-                
-                if (tituloElement && tbodyElement && detalleElement) {
-                    // Elementos encontrados, proceder con la función
-                    console.log('Elementos encontrados, procediendo...');
+            // Usar la API específica del administrador
+            fetch(`/api/pagos/estadisticas-admin?mes=${fecha.substring(0, 7)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(estadisticas => {
+                    const datosDia = estadisticas.detalle_por_dia[fecha];
+                    if (!datosDia) {
+                        alert('No hay datos para esta fecha');
+                        return;
+                    }
                     
-                    // Usar la API específica del administrador
-                    fetch(`/api/pagos/estadisticas-admin?mes=${fecha.substring(0, 7)}`)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                            return response.json();
-                        })
-                        .then(estadisticas => {
-                            const datosDia = estadisticas.detalle_por_dia[fecha];
-                            if (!datosDia) {
-                                alert('No hay datos para esta fecha');
-                                return;
-                            }
-                            
-                            // Actualizar título
-                            tituloElement.textContent = `Detalle del ${fechaFormateada}`;
-                            
-                            // Limpiar tabla
-                            tbodyElement.innerHTML = '';
-                            
-                            // Agregar filas de pacientes
-                            datosDia.pacientes.forEach(paciente => {
-                                const row = document.createElement('tr');
-                                const montoTexto = paciente.monto === 0 ? 'Obra Social' : `$${paciente.monto}`;
-                                const montoColor = paciente.monto === 0 ? 'text-info' : 'text-success';
-                                
-                                row.innerHTML = `
-                                    <td>${paciente.nombre}</td>
-                                    <td class="${montoColor}"><strong>${montoTexto}</strong></td>
-                                    <td>${paciente.obra_social || '-'}</td>
-                                `;
-                                tbodyElement.appendChild(row);
-                            });
-                            
-                            // Mostrar sección de detalle
-                            detalleElement.style.display = 'block';
-                            detalleElement.scrollIntoView({ behavior: 'smooth' });
-                        })
-                        .catch(error => {
-                            console.error('Error cargando detalle del día:', error);
-                            alert('Error al cargar el detalle del día: ' + error.message);
-                        });
-                } else {
-                    // Elementos no encontrados, intentar de nuevo en 100ms
-                    console.log('Elementos no encontrados, reintentando...');
-                    setTimeout(waitForElements, 100);
-                }
-            }
-            
-            // Iniciar la búsqueda de elementos
-            waitForElements();
+                    // Actualizar título
+                    document.getElementById('titulo-detalle-dia').textContent = `Detalle del ${fechaFormateada}`;
+                    
+                    // Limpiar tabla
+                    const tbody = document.getElementById('tabla-detalle-dia');
+                    tbody.innerHTML = '';
+                    
+                    // Agregar filas de pacientes
+                    datosDia.pacientes.forEach(paciente => {
+                        const row = document.createElement('tr');
+                        const montoTexto = paciente.monto === 0 ? 'Obra Social' : `$${paciente.monto}`;
+                        const montoColor = paciente.monto === 0 ? 'text-info' : 'text-success';
+                        
+                        row.innerHTML = `
+                            <td>${paciente.nombre}</td>
+                            <td class="${montoColor}"><strong>${montoTexto}</strong></td>
+                            <td>${paciente.obra_social || '-'}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    // Mostrar sección de detalle
+                    document.getElementById('detalle-dia').style.display = 'block';
+                    document.getElementById('detalle-dia').scrollIntoView({ behavior: 'smooth' });
+                })
+                .catch(error => {
+                    console.error('Error cargando detalle del día:', error);
+                    alert('Error al cargar el detalle del día: ' + error.message);
+                });
         }
         
         function cerrarDetalleDia() {

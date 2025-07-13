@@ -1053,7 +1053,7 @@ def limpiar_turnos_vencidos():
 @login_requerido
 @rol_requerido("administrador")
 def vista_administrador():
-    return render_template("administrador.html")
+    return render_template("administrador_fixed.html")
 
 @app.route("/api/pagos/estadisticas-admin", methods=["GET"])
 @login_requerido
