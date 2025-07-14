@@ -321,7 +321,7 @@
           
           if (response.ok) {
             alert('Turno eliminado correctamente');
-            iniciarPagina(); // Recargar los datos
+            cargarTurnos(); // Recargar los datos
           } else {
             alert('Error: ' + result.error);
           }
