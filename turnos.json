@@ -178,5 +178,42 @@
         "fecha": "2025-07-11",
         "dni_paciente": "12323423",
         "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "09:00",
+        "fecha": "2025-07-14",
+        "dni_paciente": "37863139",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "09:30",
+        "fecha": "2025-07-14",
+        "dni_paciente": "40022695",
+        "estado": "recepcionado",
+        "hora_recepcion": "09:15"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "10:00",
+        "fecha": "2025-07-14",
+        "dni_paciente": "38099876",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "10:30",
+        "fecha": "2025-07-14",
+        "dni_paciente": "40082181",
+        "estado": "recepcionado",
+        "hora_recepcion": "10:20"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "11:00",
+        "fecha": "2025-07-14",
+        "dni_paciente": "23232323",
+        "estado": "sin atender"
     }
 ]
