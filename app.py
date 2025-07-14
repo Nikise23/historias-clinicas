@@ -436,7 +436,7 @@ def ver_turnos():
 
 @app.route("/turnos/gestion")
 @login_requerido
-@rol_permitido(["secretaria", "medico"])
+@rol_permitido(["secretaria", "medico", "administrador"])
 def gestion_turnos():
     return render_template("pacientes_turnos.html")
 
@@ -907,7 +907,7 @@ def recepcionar_paciente():
 
 @app.route("/api/turnos/sala-espera", methods=["PUT"])
 @login_requerido
-@rol_permitido(["secretaria"])
+@rol_permitido(["secretaria", "administrador"])
 def mover_a_sala_espera():
     """Mover paciente recepcionado a sala de espera y registrar pago"""
     data = request.json
@@ -916,6 +916,7 @@ def mover_a_sala_espera():
     hora = data.get("hora")
     monto = data.get("monto", 0)  # Puede ser 0 para obra social
     observaciones = data.get("observaciones", "")
+    tipo_pago = data.get("tipo_pago", "efectivo")  # Nuevo campo para tipo de pago
      
     if not all([dni_paciente, fecha, hora]):
         return jsonify({"error": "DNI, fecha y hora son requeridos"}), 400
@@ -928,6 +929,11 @@ def mover_a_sala_espera():
     except (ValueError, TypeError):
         return jsonify({"error": "Monto inválido"}), 400
 
+    # Validar tipo de pago
+    if monto == 0:
+        tipo_pago = "obra_social"
+    elif tipo_pago not in ["efectivo", "transferencia"]:
+        return jsonify({"error": "Tipo de pago inválido. Debe ser 'efectivo' o 'transferencia'"}), 400
 
     turnos = cargar_json(TURNOS_FILE)
     pacientes = cargar_json(PACIENTES_FILE)
@@ -961,9 +967,6 @@ def mover_a_sala_espera():
     if pago_existente:
         return jsonify({"error": "Ya existe un pago registrado para este paciente en este turno"}), 400
     
-    if pago_existente:
-        return jsonify({"error": "Ya existe un pago registrado para este paciente en este turno"}), 400
-    
     # Registrar el pago
     nuevo_pago = {
         "id": len(pagos) + 1,
@@ -974,7 +977,8 @@ def mover_a_sala_espera():
         "hora": hora,  # Guardar la hora del turno en el pago
         "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": observaciones,
-        "obra_social": paciente.get("obra_social", "")
+        "obra_social": paciente.get("obra_social", ""),
+        "tipo_pago": tipo_pago  # Agregar tipo de pago
     }
      
     pagos.append(nuevo_pago)
@@ -1078,7 +1082,7 @@ def cobrar_y_mover_a_sala():
 
 @app.route("/api/turnos/dia", methods=["GET"])
 @login_requerido
-@rol_permitido(["secretaria", "medico"])
+@rol_permitido(["secretaria", "medico", "administrador"])
 def obtener_turnos_dia():
     """Obtener todos los turnos de una fecha específica (por defecto hoy)"""
     fecha = request.args.get("fecha", date.today().isoformat())

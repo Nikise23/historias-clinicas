@@ -384,8 +384,79 @@ Ingrese el monto a cobrar:
         alert('Por favor ingrese un monto válido (puede ser 0)');
         return;
       }
-       
-      const observaciones = prompt('Observaciones (opcional):', '') || '';
+      
+      // Si el monto es 0, es obra social y no necesita tipo de pago
+      if (monto === 0) {
+        const observaciones = prompt('Observaciones (opcional):', '') || '';
+        await procesarPagoSalaEspera(turno, monto, 'obra_social', observaciones);
+        return;
+      }
+      
+      // Para pagos particulares, mostrar modal para seleccionar tipo de pago
+      mostrarModalCobroSalaEspera(turno, monto);
+    }
+    
+    function mostrarModalCobroSalaEspera(turno, monto) {
+      // Crear modal dinámicamente
+      const modalHtml = `
+        <div class="modal fade" id="modalCobroSalaEspera" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Registrar Pago</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <p><strong>Monto a cobrar:</strong> $${monto}</p>
+                <div class="mb-3">
+                  <label class="form-label">Tipo de Pago:</label>
+                  <select class="form-select" id="tipo-pago-sala-espera">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Observaciones (opcional):</label>
+                  <textarea class="form-control" id="observaciones-sala-espera" rows="3" placeholder="Observaciones adicionales..."></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="confirmarPagoSalaEspera('${turno.dni_paciente}', '${turno.fecha}', '${turno.hora}', ${monto})">
+                  <i class="bi bi-cash-coin"></i> Confirmar Pago
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Remover modal anterior si existe
+      const modalAnterior = document.getElementById('modalCobroSalaEspera');
+      if (modalAnterior) {
+        modalAnterior.remove();
+      }
+      
+      // Agregar modal al DOM
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      
+      // Mostrar modal
+      const modal = new bootstrap.Modal(document.getElementById('modalCobroSalaEspera'));
+      modal.show();
+    }
+    
+    async function confirmarPagoSalaEspera(dni, fecha, hora, monto) {
+      const tipoPago = document.getElementById('tipo-pago-sala-espera').value;
+      const observaciones = document.getElementById('observaciones-sala-espera').value || '';
+      
+      // Cerrar modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('modalCobroSalaEspera'));
+      modal.hide();
+      
+      await procesarPagoSalaEspera({dni_paciente: dni, fecha: fecha, hora: hora}, monto, tipoPago, observaciones);
+    }
+    
+    async function procesarPagoSalaEspera(turno, monto, tipoPago, observaciones) {
       try {
         const response = await fetch('/api/turnos/sala-espera', {
           method: 'PUT',
@@ -397,6 +468,7 @@ Ingrese el monto a cobrar:
             fecha: turno.fecha,
             hora: turno.hora,
             monto: monto,
+            tipo_pago: tipoPago,
             observaciones: observaciones
           })
         });
@@ -405,7 +477,8 @@ Ingrese el monto a cobrar:
         
         if (response.ok) {
           if (monto > 0) {
-            alert(`✅ Pago de $${monto} registrado correctamente\n🏥 Paciente movido a sala de espera`);
+            const tipoTexto = tipoPago === 'efectivo' ? 'en efectivo' : 'por transferencia';
+            alert(`✅ Pago de $${monto} ${tipoTexto} registrado correctamente\n🏥 Paciente movido a sala de espera`);
           } else {
             alert(`✅ Consulta cubierta por obra social\n🏥 Paciente movido a sala de espera`);
           }
