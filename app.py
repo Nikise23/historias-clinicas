@@ -741,6 +741,25 @@ def exportar_pagos_csv():
     pagos = cargar_json(PAGOS_FILE)
     pacientes = cargar_json(PACIENTES_FILE)
     
+    # Obtener la fecha seleccionada (o hoy por defecto)
+    from datetime import datetime
+    fecha_param = request.args.get("fecha")
+    if fecha_param:
+        try:
+            fecha_dia = datetime.strptime(fecha_param, "%Y-%m-%d").date()
+        except ValueError:
+            fecha_dia = date.today()
+    else:
+        fecha_dia = date.today()
+    
+    # Filtrar pagos de la fecha seleccionada
+    pagos_dia = [p for p in pagos if p["fecha"] == fecha_dia.isoformat()]
+    
+    # Calcular subtotales
+    subtotal_efectivo = sum(p["monto"] for p in pagos_dia if p.get("tipo_pago") == "efectivo")
+    subtotal_transferencia = sum(p["monto"] for p in pagos_dia if p.get("tipo_pago") == "transferencia")
+    total = subtotal_efectivo + subtotal_transferencia
+    
     # Crear archivo CSV en memoria
     output = io.StringIO()
     writer = csv.writer(output)
@@ -749,7 +768,7 @@ def exportar_pagos_csv():
     writer.writerow(['Fecha', 'Apellido', 'Nombre', 'DNI', 'Monto', 'Tipo de Pago', 'Observaciones'])
     
     # Datos
-    for pago in pagos:
+    for pago in pagos_dia:
         paciente = next((p for p in pacientes if p["dni"] == pago["dni_paciente"]), {})
         writer.writerow([
             pago["fecha"],
@@ -760,11 +779,17 @@ def exportar_pagos_csv():
             pago.get("tipo_pago", "efectivo"),
             pago.get("observaciones", "")
         ])
-
+    # Fila vacía
+    writer.writerow([])
+    # Subtotales
+    writer.writerow(["", "", "", "", "Subtotal Efectivo", subtotal_efectivo, ""])
+    writer.writerow(["", "", "", "", "Subtotal Transferencia", subtotal_transferencia, ""])
+    writer.writerow(["", "", "", "", "TOTAL", total, ""])
+    
     # Preparar respuesta
     output.seek(0)
     response = make_response(output.getvalue())
-    response.headers["Content-Disposition"] = f"attachment; filename=pagos_{date.today().isoformat()}.csv"
+    response.headers["Content-Disposition"] = f"attachment; filename=pagos_{fecha_dia.isoformat()}.csv"
     response.headers["Content-type"] = "text/csv"
     
     return response
