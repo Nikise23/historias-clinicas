@@ -1243,22 +1243,43 @@ def obtener_estadisticas_pagos_admin():
 @rol_requerido("administrador")
 def exportar_pagos_csv_admin():
     """Exportar pagos a CSV para administradores"""
-    mes = request.args.get("mes")
-    if not mes:
-        mes = datetime.now().strftime("%Y-%m")
-    
+    from datetime import datetime
     pagos = cargar_json(PAGOS_FILE)
     pacientes = cargar_json(PACIENTES_FILE)
     
-    # Filtrar pagos del mes
-    pagos_mes = [p for p in pagos if p.get("fecha", "").startswith(mes)]
+    fecha_param = request.args.get("fecha")
+    mes = request.args.get("mes")
+    pagos_filtrados = pagos
+    nombre_archivo = "pagos"
+    
+    if fecha_param:
+        try:
+            fecha_dia = datetime.strptime(fecha_param, "%Y-%m-%d").date()
+        except ValueError:
+            fecha_dia = date.today()
+        pagos_filtrados = [p for p in pagos if p.get("fecha", "") == fecha_dia.isoformat()]
+        nombre_archivo += f"_{fecha_dia.isoformat()}"
+    elif mes:
+        pagos_filtrados = [p for p in pagos if p.get("fecha", "").startswith(mes)]
+        nombre_archivo += f"_{mes}"
+    else:
+        mes_actual = datetime.now().strftime("%Y-%m")
+        pagos_filtrados = [p for p in pagos if p.get("fecha", "").startswith(mes_actual)]
+        nombre_archivo += f"_{mes_actual}"
+    
+    # Calcular subtotales si es por día
+    if fecha_param:
+        subtotal_efectivo = sum(p["monto"] for p in pagos_filtrados if p.get("tipo_pago") == "efectivo")
+        subtotal_transferencia = sum(p["monto"] for p in pagos_filtrados if p.get("tipo_pago") == "transferencia")
+        subtotal_obra_social = sum(p["monto"] for p in pagos_filtrados if p.get("tipo_pago") == "obra_social")
+        total = subtotal_efectivo + subtotal_transferencia
     
     # Crear CSV
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['Fecha', 'DNI', 'Nombre', 'Apellido', 'Monto', 'Obra Social', 'Observaciones'])
+    writer.writerow(['Fecha', 'DNI', 'Nombre', 'Apellido', 'Monto', 'Tipo de Pago', 'Obra Social', 'Observaciones'])
     
-    for pago in pagos_mes:
+    for pago in pagos_filtrados:
         paciente = next((p for p in pacientes if p["dni"] == pago.get("dni_paciente")), {})
         writer.writerow([
             pago.get("fecha", ""),
@@ -1266,9 +1287,18 @@ def exportar_pagos_csv_admin():
             paciente.get("nombre", ""),
             paciente.get("apellido", ""),
             pago.get("monto", 0),
+            pago.get("tipo_pago", "efectivo"),
             paciente.get("obra_social", ""),
             pago.get("observaciones", "")
         ])
+    
+    # Subtotales solo si es por día
+    if fecha_param:
+        writer.writerow([])
+        writer.writerow(["", "", "", "", "Subtotal Efectivo", subtotal_efectivo, "", ""])
+        writer.writerow(["", "", "", "", "Subtotal Transferencia", subtotal_transferencia, "", ""])
+        writer.writerow(["", "", "", "", "Subtotal Obra Social", subtotal_obra_social, "", ""])
+        writer.writerow(["", "", "", "", "TOTAL", total, "", ""])
     
     output.seek(0)
     return make_response(
@@ -1276,7 +1306,7 @@ def exportar_pagos_csv_admin():
         200,
         {
             'Content-Type': 'text/csv',
-            'Content-Disposition': f'attachment; filename=pagos_{mes}.csv'
+            'Content-Disposition': f'attachment; filename={nombre_archivo}.csv'
         }
     )
 
