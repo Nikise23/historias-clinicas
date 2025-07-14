@@ -746,7 +746,7 @@ def exportar_pagos_csv():
     writer = csv.writer(output)
     
     # Encabezados
-    writer.writerow(['Fecha', 'Apellido', 'Nombre', 'DNI', 'Monto', 'Observaciones'])
+    writer.writerow(['Fecha', 'Apellido', 'Nombre', 'DNI', 'Monto', 'Tipo de Pago', 'Observaciones'])
     
     # Datos
     for pago in pagos:
@@ -757,6 +757,7 @@ def exportar_pagos_csv():
             paciente.get("nombre", ""),
             pago["dni_paciente"],
             pago["monto"],
+            pago.get("tipo_pago", "efectivo"),
             pago.get("observaciones", "")
         ])
 
