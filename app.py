@@ -661,10 +661,19 @@ def eliminar_pago(pago_id):
 def obtener_estadisticas_pagos():
     pagos = cargar_json(PAGOS_FILE)
     hoy = date.today()
-    mes_param = request.args.get("mes", hoy.strftime("%Y-%m"))
+    # Permitir filtrar por fecha específica
+    fecha_param = request.args.get("fecha")
+    if fecha_param:
+        try:
+            fecha_dia = datetime.strptime(fecha_param, "%Y-%m-%d").date()
+        except ValueError:
+            fecha_dia = hoy
+    else:
+        fecha_dia = hoy
+    mes_param = request.args.get("mes", fecha_dia.strftime("%Y-%m"))
     
     # Filtrar pagos del día
-    pagos_hoy = [p for p in pagos if p["fecha"] == hoy.isoformat()]
+    pagos_hoy = [p for p in pagos if p["fecha"] == fecha_dia.isoformat()]
     total_dia = sum(p["monto"] for p in pagos_hoy)
     
     # Filtrar pagos del mes especificado
@@ -714,7 +723,7 @@ def obtener_estadisticas_pagos():
         "cantidad_pagos_mes": len(pagos_mes),
         "pagos_obra_social": pagos_obra_social,
         "pagos_particulares": pagos_particulares,
-        "fecha": hoy.isoformat(),
+        "fecha": fecha_dia.isoformat(),
         "mes_consultado": mes_param,
         "detalle_por_dia": pagos_por_dia_ordenados,
         # Nuevas estadísticas por tipo de pago
