@@ -38,3 +38,4 @@ if eliminados:
         print(f"- {t.get('fecha')} {t.get('hora')} | {t.get('medico')} | {t.get('dni_paciente')} | {t.get('estado')}")
 else:
     print("No se eliminaron turnos.")
+

@@ -23,5 +23,10 @@
         "usuario": "Julieta Colom",
         "contrasena": "scrypt:32768:8:1$OFAvrSmMFFRqUa1L$b7e223e768b5e35ad96216bdcd9af8bf7bd97df9f1909b3eef2dcfe13da66a7b43726e72d1cafaf8d1dcd8c8277ae24056265d70f5903d4e7aff125f8141452c",
         "rol": "medico"
+    },
+    {
+        "usuario": "colom-bobbiesi",
+        "contrasena": "scrypt:32768:8:1$ciS19VG8rrD6SDWA$fd7ecca2cec435aac6a440053392017dd5c03caf2084ae318a01fc67b0478a2b7868377b68196e77d66a0a4e21ec2360b695d30703618dd7cd45f277c5e3e2f8",
+        "rol": "administrador"
     }
 ]

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Reportes Financieros</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #ecf0f1;
+            --dark-text: #2c3e50;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .admin-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid var(--accent-color);
+            padding: 1rem 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .admin-title {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 2.5rem;
+            text-align: center;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .admin-subtitle {
+            color: var(--secondary-color);
+            text-align: center;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+            opacity: 0.8;
+        }
+
+        .main-container {
+            padding: 2rem 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-color), var(--success-color));
+        }
+
+        .stat-card h3 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .stat-card h6 {
+            color: var(--secondary-color);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .icon {
+            font-size: 3rem;
+            opacity: 0.3;
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+
+        .report-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, var(--accent-color), #2980b9);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.25rem;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+            color: white;
+        }
+
+        .btn-success-admin {
+            background: linear-gradient(135deg, var(--success-color), #229954);
+        }
+
+        .btn-warning-admin {
+            background: linear-gradient(135deg, var(--warning-color), #e67e22);
+        }
+
+        .btn-danger-admin {
+            background: linear-gradient(135deg, var(--danger-color), #c0392b);
+        }
+
+        .table-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table th {
+            background: var(--light-bg);
+            border: none;
+            font-weight: 600;
+            color: var(--dark-text);
+        }
+
+        .table td {
+            border: none;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        .logout-btn {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logout-btn:hover {
+            background: var(--danger-color);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .user-info {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            color: var(--primary-color);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .admin-title {
+                font-size: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stat-card h3 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="admin-header">
+        <div class="container">
+            <h1 class="admin-title">
+                <i class="bi bi-graph-up-arrow"></i>
+                Panel de Administración
+            </h1>
+            <p class="admin-subtitle">Reportes Financieros y Gestión de Datos</p>
+        </div>
+    </div>
+
+    <!-- User Info -->
+    <div class="user-info">
+        <i class="bi bi-person-circle"></i>
+        <span id="usuario-actual">Administrador</span>
+    </div>
+
+    <!-- Logout Button -->
+    <a href="/logout" class="logout-btn">
+        <i class="bi bi-box-arrow-right"></i>
+        Cerrar Sesión
+    </a>
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="container">
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card" style="border-left-color: #3498db;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Ingresos del Mes</h6>
+                            <h3 class="mb-0" id="total-mes">$0</h3>
+                            <small class="text-muted">Total recaudado</small>
+                        </div>
+                        <i class="bi bi-cash-stack icon text-primary"></i>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="border-left-color: #27ae60;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Consultas del Mes</h6>
+                            <h3 class="mb-0" id="total-consultas">0</h3>
+                            <small class="text-muted">Total atendidas</small>
+                        </div>
+                        <i class="bi bi-people icon text-success"></i>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="border-left-color: #f39c12;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Pagos Particulares</h6>
+                            <h3 class="mb-0" id="pagos-particulares">0</h3>
+                            <small class="text-muted">Sin obra social</small>
+                        </div>
+                        <i class="bi bi-person-check icon text-warning"></i>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="border-left-color: #9b59b6;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Obra Social</h6>
+                            <h3 class="mb-0" id="pagos-obra-social">0</h3>
+                            <small class="text-muted">Con cobertura</small>
+                        </div>
+                        <i class="bi bi-shield-check icon text-purple"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Type Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card" style="border-left-color: #28a745;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Pagos en Efectivo</h6>
+                            <h3 class="mb-0" id="total-efectivo">$0</h3>
+                            <small class="text-muted" id="cantidad-efectivo">0 pagos</small>
+                        </div>
+                        <i class="bi bi-cash icon text-success"></i>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="border-left-color: #17a2b8;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Transferencias</h6>
+                            <h3 class="mb-0" id="total-transferencia">$0</h3>
+                            <small class="text-muted" id="cantidad-transferencia">0 pagos</small>
+                        </div>
+                        <i class="bi bi-bank icon text-info"></i>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="border-left-color: #6f42c1;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Obra Social</h6>
+                            <h3 class="mb-0" id="total-obra-social">$0</h3>
+                            <small class="text-muted" id="cantidad-obra-social">0 consultas</small>
+                        </div>
+                        <i class="bi bi-shield-check icon text-purple"></i>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="border-left-color: #fd7e14;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Recaudado</h6>
+                            <h3 class="mb-0" id="total-recaudado">$0</h3>
+                            <small class="text-muted">Efectivo + Transferencias</small>
+                        </div>
+                        <i class="bi bi-calculator icon text-warning"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div class="report-section">
+                <h2 class="section-title">
+                    <i class="bi bi-graph-up"></i>
+                    Reporte de Ingresos Mensuales
+                </h2>
+                <!-- Month Selector -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label for="mes-selector" class="form-label">Seleccionar Mes</label>
+                        <input type="month" id="mes-selector" class="form-control" onchange="cargarIngresosMes()">
+                    </div>
+                    <div class="col-md-8">
+                        <div class="d-flex gap-2 mt-4">
+                            <button class="btn-admin" onclick="cargarIngresosMes()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                                Actualizar
+                            </button>
+                            <button class="btn-admin btn-success-admin" onclick="exportarIngresosMesCSV()">
+                                <i class="bi bi-download"></i>
+                                Exportar CSV
+                            </button>
+                            <button class="btn-admin btn-warning-admin" onclick="mesActual()">
+                                <i class="bi bi-calendar-today"></i>
+                                Mes Actual
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div class="loading" id="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando reporte...</p>
+                </div>
+
+                <!-- Daily Breakdown -->
+                <div class="table-container" id="tabla-container" style="display: none;">
+                    <h6 class="mb-3">
+                        <i class="bi bi-calendar-range"></i>
+                        Desglose Diario del Mes
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Día</th>
+                                    <th>Cantidad</th>
+                                    <th>Ingresos</th>
+                                    <th>Ver Detalle</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-ingresos-diarios">
+                                <!-- Se cargan dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Daily Detail -->
+                <div class="table-container mt-3" id="detalle-dia" style="display: none;">
+                    <h6 class="mb-2" id="titulo-detalle-dia">Detalle del Día</h6>
+                    <button class="btn-admin btn-danger-admin" onclick="cerrarDetalleDia()">
+                        <i class="bi bi-x"></i>
+                        Cerrar
+                    </button>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Paciente</th>
+                                    <th>Monto</th>
+                                    <th>Obra Social</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-detalle-dia">
+                                <!-- Se cargan dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+             </div>
+
+            <!-- Quick Actions -->
+            <div class="report-section">
+                <h2 class="section-title">
+                    <i class="bi bi-lightning"></i>
+                    Acciones Rápidas
+                </h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-grid gap-2">
+                            <button class="btn-admin" onclick="generarReporteAnual()">
+                                <i class="bi bi-calendar-year"></i>
+                                Reporte Anual
+                            </button>
+                            <button class="btn-admin btn-success-admin" onclick="generarReporteMensual()">
+                                <i class="bi bi-calendar-month"></i>
+                                Reporte Mensual
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-grid gap-2">
+                            <button class="btn-admin btn-warning-admin" onclick="generarReporteSemanal()">
+                                <i class="bi bi-calendar-week"></i>
+                                Reporte Semanal
+                            </button>
+                            <button class="btn-admin btn-danger-admin" onclick="generarReporteDiario()">
+                                <i class="bi bi-calendar-day"></i>
+                                Reporte Diario
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Cargar información del usuario
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarInfoUsuario();
+            // Configurar mes actual por defecto
+            const hoy = new Date();
+            const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+            document.getElementById('mes-selector').value = mesActual;
+            cargarIngresosMes();
+        });
+
+        async function cargarInfoUsuario() {
+            try {
+                const response = await fetch('/api/session-info');
+                const data = await response.json();
+                document.getElementById('usuario-actual').textContent = data.usuario;
+            } catch (error) {
+                console.error('Error cargando información del usuario:', error);
+            }
+        }
+
+        function mostrarLoading(mostrar) {
+            document.getElementById('loading').style.display = mostrar ? 'block' : 'none';
+            document.getElementById('tabla-container').style.display = mostrar ? 'none' : 'block';
+        }
+
+        function mesActual() {
+            const hoy = new Date();
+            const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+            document.getElementById('mes-selector').value = mesActual;
+            cargarIngresosMes();
+        }
+        async function cargarIngresosMes() {
+            const mesSeleccionado = document.getElementById('mes-selector').value;
+            if (!mesSeleccionado) {
+                alert('Por favor seleccione un mes');
+                return;
+            }
+            
+            mostrarLoading(true);
+            
+            try {
+                const response = await fetch(`/api/pagos/estadisticas-admin?mes=${mesSeleccionado}`);
+                const estadisticas = await response.json();
+                
+                // Actualizar estadísticas principales
+                document.getElementById('total-mes').textContent = `$${estadisticas.total_mes}`;
+                document.getElementById('total-consultas').textContent = estadisticas.cantidad_pagos_mes;
+                document.getElementById('pagos-particulares').textContent = estadisticas.pagos_particulares;
+                document.getElementById('pagos-obra-social').textContent = estadisticas.pagos_obra_social;
+                
+                // Actualizar estadísticas por tipo de pago
+                document.getElementById('total-efectivo').textContent = `$${estadisticas.total_efectivo || 0}`;
+                document.getElementById('total-transferencia').textContent = `$${estadisticas.total_transferencia || 0}`;
+                document.getElementById('total-obra-social').textContent = `$${estadisticas.total_obra_social || 0}`;
+                document.getElementById('total-recaudado').textContent = `$${(estadisticas.total_efectivo || 0) + (estadisticas.total_transferencia || 0)}`;
+                
+                document.getElementById('cantidad-efectivo').textContent = `${estadisticas.pagos_efectivo || 0} pagos`;
+                document.getElementById('cantidad-transferencia').textContent = `${estadisticas.pagos_transferencia || 0} pagos`;
+                document.getElementById('cantidad-obra-social').textContent = `${estadisticas.pagos_obra_social_count || 0} consultas`;
+                
+
+                // Cargar tabla de ingresos diarios
+                cargarTablaIngresosDiarios(estadisticas.detalle_por_dia);
+                
+            } catch (error) {
+                console.error('Error cargando ingresos del mes:', error);
+                alert('Error al cargar los ingresos del mes');
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        function cargarTablaIngresosDiarios(detallePorDia) {
+            const tbody = document.getElementById('tabla-ingresos-diarios');
+            tbody.innerHTML = '';
+            
+            if (Object.keys(detallePorDia).length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay ingresos registrados para este mes</td></tr>';
+                return;
+            }
+            Object.entries(detallePorDia).forEach(([fecha, datos]) => {
+                const fechaObj = new Date(fecha + 'T00:00:00');
+                const nombreDia = fechaObj.toLocaleDateString('es-ES', { weekday: 'long' });
+                const fechaFormateada = fechaObj.toLocaleDateString('es-ES');
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${fechaFormateada}</strong></td>
+                    <td class="text-capitalize">${nombreDia}</td>
+                    <td><span class="badge bg-primary">${datos.cantidad}</span></td>
+                    <td><strong class="text-success">$${datos.monto}</strong></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info" onclick="mostrarDetalleDia('${fecha}', '${fechaFormateada}')">
+                            <i class="bi bi-eye"></i> Ver
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function mostrarDetalleDia(fecha, fechaFormateada) {
+            console.log('Función mostrarDetalleDia llamada con:', { fecha, fechaFormateada });
+            
+            // Usar la API específica del administrador
+            fetch(`/api/pagos/estadisticas-admin?mes=${fecha.substring(0, 7)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(estadisticas => {
+                    const datosDia = estadisticas.detalle_por_dia[fecha];
+                    if (!datosDia) {
+                        alert('No hay datos para esta fecha');
+                        return;
+                    }
+                    
+                    // Actualizar título
+                    document.getElementById('titulo-detalle-dia').textContent = `Detalle del ${fechaFormateada}`;
+                    
+                    // Limpiar tabla
+                    const tbody = document.getElementById('tabla-detalle-dia');
+                    tbody.innerHTML = '';
+                    
+                    // Agregar filas de pacientes
+                    datosDia.pacientes.forEach(paciente => {
+                        const row = document.createElement('tr');
+                        const montoTexto = paciente.monto === 0 ? 'Obra Social' : `$${paciente.monto}`;
+                        const montoColor = paciente.monto === 0 ? 'text-info' : 'text-success';
+                        
+                        // Determinar tipo de pago y su badge
+                        let tipoPagoBadge = '';
+                        if (paciente.monto === 0) {
+                            tipoPagoBadge = '<span class="badge bg-success">Obra Social</span>';
+                        } else {
+                            const tipoPago = paciente.tipo_pago || 'efectivo';
+                            const badgeClass = tipoPago === 'efectivo' ? 'bg-primary' : 'bg-info';
+                            const badgeText = tipoPago === 'efectivo' ? 'Efectivo' : 'Transferencia';
+                            tipoPagoBadge = `<span class="badge ${badgeClass}">${badgeText}</span>`;
+                        }
+
+                        row.innerHTML = `
+                            <td>${paciente.nombre}</td>
+                            <td class="${montoColor}"><strong>${montoTexto}</strong></td>
+                            <td>${paciente.obra_social || '-'}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    // Mostrar sección de detalle
+                    document.getElementById('detalle-dia').style.display = 'block';
+                    document.getElementById('detalle-dia').scrollIntoView({ behavior: 'smooth' });
+                })
+                .catch(error => {
+                    console.error('Error cargando detalle del día:', error);
+                    alert('Error al cargar el detalle del día: ' + error.message);
+                });
+        }
+        
+        function cerrarDetalleDia() {
+            document.getElementById('detalle-dia').style.display = 'none';
+        }
+        
+        async function exportarIngresosMesCSV() {
+            const mesSeleccionado = document.getElementById('mes-selector').value;
+            if (!mesSeleccionado) {
+                alert('Por favor seleccione un mes');
+                return;
+            }
+            try {
+                window.open(`/api/pagos/exportar-admin?mes=${mesSeleccionado}`, '_blank');
+                alert('Reporte de ingresos descargado correctamente');
+            } catch (error) {
+                console.error('Error exportando ingresos:', error);
+                alert('Error al exportar el reporte de ingresos');
+            }
+        }
+
+        // Funciones para reportes adicionales (placeholder)
+        function generarReporteAnual() {
+            alert('Función de reporte anual en desarrollo');
+        }
+
+        function generarReporteMensual() {
+            alert('Función de reporte mensual en desarrollo');
+        }
+
+        function generarReporteSemanal() {
+            alert('Función de reporte semanal en desarrollo');
+        }
+
+        function generarReporteDiario() {
+            alert('Función de reporte diario en desarrollo');
+        }
+    </script>
+</body>
+</html>
