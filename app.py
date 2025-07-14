@@ -575,7 +575,7 @@ def eliminar_turno(dni, fecha, hora):
 
 @app.route("/api/pagos", methods=["GET"])
 @login_requerido
-@rol_requerido("secretaria")
+@rol_permitido(["secretaria", "administrador"])
 def obtener_pagos():
     pagos = cargar_json(PAGOS_FILE)
     return jsonify(pagos)
@@ -795,7 +795,7 @@ def obtener_pacientes_atendidos():
 
 @app.route("/api/pacientes/recepcionados", methods=["GET"])
 @login_requerido
-@rol_permitido(["secretaria", "medico"])
+@rol_permitido(["secretaria", "medico", "administrador"])
 def obtener_pacientes_recepcionados():
     """Obtiene pacientes que están recepcionados y pendientes de pago"""
     fecha = request.args.get("fecha", date.today().isoformat())
@@ -832,6 +832,48 @@ def obtener_pacientes_recepcionados():
     pacientes_recepcionados.sort(key=lambda p: p.get("hora_turno", "00:00"))
     
     return jsonify(pacientes_recepcionados)
+
+@app.route("/api/pacientes/sala-espera", methods=["GET"])
+@login_requerido
+@rol_permitido(["secretaria", "medico", "administrador"])
+def obtener_pacientes_sala_espera():
+    """Obtiene pacientes que están en sala de espera (ya cobrados)"""
+    fecha = request.args.get("fecha", date.today().isoformat())
+    
+    turnos = cargar_json(TURNOS_FILE)
+    pacientes = cargar_json(PACIENTES_FILE)
+    pagos = cargar_json(PAGOS_FILE)
+    
+    # Filtrar turnos en sala de espera en la fecha especificada
+    turnos_sala_espera = [t for t in turnos if t.get("fecha") == fecha and t.get("estado") == "sala de espera"]
+    
+    # Obtener información de pagos para estos pacientes
+    pacientes_sala_espera = []
+    for turno in turnos_sala_espera:
+        paciente = next((p for p in pacientes if p["dni"] == turno["dni_paciente"]), None)
+        pago = next((p for p in pagos if p["dni_paciente"] == turno["dni_paciente"] and p["fecha"] == fecha), None)
+        
+        if paciente:
+            pacientes_sala_espera.append({
+                "dni": paciente["dni"],
+                "nombre": paciente["nombre"],
+                "apellido": paciente["apellido"],
+                "obra_social": paciente.get("obra_social", ""),
+                "celular": paciente.get("celular", ""),
+                "hora_turno": turno["hora"],
+                "medico": turno["medico"],
+                "fecha": turno["fecha"],
+                "hora_recepcion": turno.get("hora_recepcion", ""),
+                "hora_sala_espera": turno.get("hora_sala_espera", ""),
+                "monto_pagado": pago.get("monto", 0) if pago else 0,
+                "tipo_pago": pago.get("tipo_pago", "obra_social") if pago else "obra_social",
+                "observaciones": pago.get("observaciones", "") if pago else ""
+            })
+    
+    # Ordenar por hora de turno
+    pacientes_sala_espera.sort(key=lambda p: p.get("hora_turno", "00:00"))
+    
+    return jsonify(pacientes_sala_espera)
 
 # ======================= SISTEMA DE RECEPCIÓN =======================
 
