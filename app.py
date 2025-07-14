@@ -6,6 +6,7 @@ import io
 from functools import wraps
 from datetime import datetime, date, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_sqlalchemy import SQLAlchemy
 
 
 app = Flask(__name__)
@@ -21,6 +22,11 @@ PACIENTES_FILE = "pacientes.json"
 TURNOS_FILE = "turnos.json"
 AGENDA_FILE = "agenda.json"
 PAGOS_FILE = "pagos.json"
+
+# Configuración de la base de datos PostgreSQL
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql://postgres:postgres@localhost/clinica_db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
 # ===================== Funciones auxiliares ======================
 
