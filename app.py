@@ -124,6 +124,8 @@ def login():
                 # Redirigir según el rol
                 if u.get("rol") == "secretaria":
                     return redirect(url_for("vista_secretaria"))
+                elif u.get("rol") == "administrador":
+                    return redirect(url_for("vista_administrador"))
                 else:
                     return redirect(url_for("inicio"))
         return render_template("login.html", error="Usuario o contraseña incorrectos")
@@ -434,7 +436,7 @@ def ver_turnos():
 
 @app.route("/turnos/gestion")
 @login_requerido
-@rol_permitido(["secretaria", "medico"])
+@rol_permitido(["secretaria", "medico", "administrador"])
 def gestion_turnos():
     return render_template("pacientes_turnos.html")
 
@@ -461,7 +463,7 @@ def obtener_turnos_medico():
 
 @app.route("/secretaria")
 @login_requerido
-@rol_requerido("secretaria")
+@rol_permitido(["secretaria", "administrador"])
 def vista_secretaria():
     return render_template("secretaria.html")
 
@@ -573,7 +575,7 @@ def eliminar_turno(dni, fecha, hora):
 
 @app.route("/api/pagos", methods=["GET"])
 @login_requerido
-@rol_requerido("secretaria")
+@rol_permitido(["secretaria", "administrador"])
 def obtener_pagos():
     pagos = cargar_json(PAGOS_FILE)
     return jsonify(pagos)
@@ -597,6 +599,15 @@ def registrar_pago():
     except (ValueError, TypeError):
         return jsonify({"error": "Monto inválido"}), 400
     
+    # Validar tipo de pago (solo para pagos particulares)
+    tipo_pago = data.get("tipo_pago", "efectivo")
+    if monto > 0 and tipo_pago not in ["efectivo", "transferencia"]:
+        return jsonify({"error": "Tipo de pago inválido. Debe ser 'efectivo' o 'transferencia'"}), 400
+    
+    # Para obra social, el tipo de pago siempre es "obra_social"
+    if monto == 0:
+        tipo_pago = "obra_social"
+    
     # Verificar que el paciente existe
     pacientes = cargar_json(PACIENTES_FILE)
     paciente = next((p for p in pacientes if p["dni"] == data["dni_paciente"]), None)
@@ -619,7 +630,8 @@ def registrar_pago():
         "fecha": data["fecha"],
         "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": data.get("observaciones", ""),
-        "obra_social": paciente.get("obra_social", "")
+        "obra_social": paciente.get("obra_social", ""),
+        "tipo_pago": tipo_pago
     }
     
     pagos.append(nuevo_pago)
@@ -649,16 +661,33 @@ def eliminar_pago(pago_id):
 def obtener_estadisticas_pagos():
     pagos = cargar_json(PAGOS_FILE)
     hoy = date.today()
-    mes_param = request.args.get("mes", hoy.strftime("%Y-%m"))
+    # Permitir filtrar por fecha específica
+    fecha_param = request.args.get("fecha")
+    if fecha_param:
+        try:
+            fecha_dia = datetime.strptime(fecha_param, "%Y-%m-%d").date()
+        except ValueError:
+            fecha_dia = hoy
+    else:
+        fecha_dia = hoy
+    mes_param = request.args.get("mes", fecha_dia.strftime("%Y-%m"))
     
     # Filtrar pagos del día
-    pagos_hoy = [p for p in pagos if p["fecha"] == hoy.isoformat()]
+    pagos_hoy = [p for p in pagos if p["fecha"] == fecha_dia.isoformat()]
     total_dia = sum(p["monto"] for p in pagos_hoy)
     
     # Filtrar pagos del mes especificado
     pagos_mes = [p for p in pagos if p["fecha"].startswith(mes_param)]
     total_mes = sum(p["monto"] for p in pagos_mes)
     
+    # Estadísticas por tipo de pago del día
+    pagos_efectivo_hoy = [p for p in pagos_hoy if p.get("tipo_pago") == "efectivo"]
+    pagos_transferencia_hoy = [p for p in pagos_hoy if p.get("tipo_pago") == "transferencia"]
+    pagos_obra_social_hoy = [p for p in pagos_hoy if p.get("tipo_pago") == "obra_social"]
+    
+    total_efectivo_hoy = sum(p["monto"] for p in pagos_efectivo_hoy)
+    total_transferencia_hoy = sum(p["monto"] for p in pagos_transferencia_hoy)
+    total_obra_social_hoy = sum(p["monto"] for p in pagos_obra_social_hoy)
 
     # Estadísticas por día del mes
     pagos_por_dia = {}
@@ -675,7 +704,8 @@ def obtener_estadisticas_pagos():
         pagos_por_dia[dia]["pacientes"].append({
             "nombre": pago["nombre_paciente"],
             "monto": pago["monto"],
-            "obra_social": pago.get("obra_social", "")
+            "obra_social": pago.get("obra_social", ""),
+            "tipo_pago": pago.get("tipo_pago", "efectivo")
         })
          
         if pago["monto"] == 0:
@@ -693,9 +723,16 @@ def obtener_estadisticas_pagos():
         "cantidad_pagos_mes": len(pagos_mes),
         "pagos_obra_social": pagos_obra_social,
         "pagos_particulares": pagos_particulares,
-        "fecha": hoy.isoformat(),
+        "fecha": fecha_dia.isoformat(),
         "mes_consultado": mes_param,
-        "detalle_por_dia": pagos_por_dia_ordenados
+        "detalle_por_dia": pagos_por_dia_ordenados,
+        # Nuevas estadísticas por tipo de pago
+        "pagos_efectivo_hoy": len(pagos_efectivo_hoy),
+        "pagos_transferencia_hoy": len(pagos_transferencia_hoy),
+        "pagos_obra_social_hoy": len(pagos_obra_social_hoy),
+        "total_efectivo_hoy": total_efectivo_hoy,
+        "total_transferencia_hoy": total_transferencia_hoy,
+        "total_obra_social_hoy": total_obra_social_hoy
     })
 @app.route("/api/pagos/exportar", methods=["GET"])
 @login_requerido
@@ -704,15 +741,34 @@ def exportar_pagos_csv():
     pagos = cargar_json(PAGOS_FILE)
     pacientes = cargar_json(PACIENTES_FILE)
     
+    # Obtener la fecha seleccionada (o hoy por defecto)
+    from datetime import datetime
+    fecha_param = request.args.get("fecha")
+    if fecha_param:
+        try:
+            fecha_dia = datetime.strptime(fecha_param, "%Y-%m-%d").date()
+        except ValueError:
+            fecha_dia = date.today()
+    else:
+        fecha_dia = date.today()
+    
+    # Filtrar pagos de la fecha seleccionada
+    pagos_dia = [p for p in pagos if p["fecha"] == fecha_dia.isoformat()]
+    
+    # Calcular subtotales
+    subtotal_efectivo = sum(p["monto"] for p in pagos_dia if p.get("tipo_pago") == "efectivo")
+    subtotal_transferencia = sum(p["monto"] for p in pagos_dia if p.get("tipo_pago") == "transferencia")
+    total = subtotal_efectivo + subtotal_transferencia
+    
     # Crear archivo CSV en memoria
     output = io.StringIO()
     writer = csv.writer(output)
     
     # Encabezados
-    writer.writerow(['Fecha', 'Apellido', 'Nombre', 'DNI', 'Monto', 'Observaciones'])
+    writer.writerow(['Fecha', 'Apellido', 'Nombre', 'DNI', 'Monto', 'Tipo de Pago', 'Observaciones'])
     
     # Datos
-    for pago in pagos:
+    for pago in pagos_dia:
         paciente = next((p for p in pacientes if p["dni"] == pago["dni_paciente"]), {})
         writer.writerow([
             pago["fecha"],
@@ -720,13 +776,20 @@ def exportar_pagos_csv():
             paciente.get("nombre", ""),
             pago["dni_paciente"],
             pago["monto"],
+            pago.get("tipo_pago", "efectivo"),
             pago.get("observaciones", "")
         ])
-
+    # Fila vacía
+    writer.writerow([])
+    # Subtotales
+    writer.writerow(["", "", "", "", "Subtotal Efectivo", subtotal_efectivo, ""])
+    writer.writerow(["", "", "", "", "Subtotal Transferencia", subtotal_transferencia, ""])
+    writer.writerow(["", "", "", "", "TOTAL", total, ""])
+    
     # Preparar respuesta
     output.seek(0)
     response = make_response(output.getvalue())
-    response.headers["Content-Disposition"] = f"attachment; filename=pagos_{date.today().isoformat()}.csv"
+    response.headers["Content-Disposition"] = f"attachment; filename=pagos_{fecha_dia.isoformat()}.csv"
     response.headers["Content-type"] = "text/csv"
     
     return response
@@ -767,7 +830,7 @@ def obtener_pacientes_atendidos():
 
 @app.route("/api/pacientes/recepcionados", methods=["GET"])
 @login_requerido
-@rol_permitido(["secretaria", "medico"])
+@rol_permitido(["secretaria", "medico", "administrador"])
 def obtener_pacientes_recepcionados():
     """Obtiene pacientes que están recepcionados y pendientes de pago"""
     fecha = request.args.get("fecha", date.today().isoformat())
@@ -805,6 +868,48 @@ def obtener_pacientes_recepcionados():
     
     return jsonify(pacientes_recepcionados)
 
+@app.route("/api/pacientes/sala-espera", methods=["GET"])
+@login_requerido
+@rol_permitido(["secretaria", "medico", "administrador"])
+def obtener_pacientes_sala_espera():
+    """Obtiene pacientes que están en sala de espera (ya cobrados)"""
+    fecha = request.args.get("fecha", date.today().isoformat())
+    
+    turnos = cargar_json(TURNOS_FILE)
+    pacientes = cargar_json(PACIENTES_FILE)
+    pagos = cargar_json(PAGOS_FILE)
+    
+    # Filtrar turnos en sala de espera en la fecha especificada
+    turnos_sala_espera = [t for t in turnos if t.get("fecha") == fecha and t.get("estado") == "sala de espera"]
+    
+    # Obtener información de pagos para estos pacientes
+    pacientes_sala_espera = []
+    for turno in turnos_sala_espera:
+        paciente = next((p for p in pacientes if p["dni"] == turno["dni_paciente"]), None)
+        pago = next((p for p in pagos if p["dni_paciente"] == turno["dni_paciente"] and p["fecha"] == fecha), None)
+        
+        if paciente:
+            pacientes_sala_espera.append({
+                "dni": paciente["dni"],
+                "nombre": paciente["nombre"],
+                "apellido": paciente["apellido"],
+                "obra_social": paciente.get("obra_social", ""),
+                "celular": paciente.get("celular", ""),
+                "hora_turno": turno["hora"],
+                "medico": turno["medico"],
+                "fecha": turno["fecha"],
+                "hora_recepcion": turno.get("hora_recepcion", ""),
+                "hora_sala_espera": turno.get("hora_sala_espera", ""),
+                "monto_pagado": pago.get("monto", 0) if pago else 0,
+                "tipo_pago": pago.get("tipo_pago", "obra_social") if pago else "obra_social",
+                "observaciones": pago.get("observaciones", "") if pago else ""
+            })
+    
+    # Ordenar por hora de turno
+    pacientes_sala_espera.sort(key=lambda p: p.get("hora_turno", "00:00"))
+    
+    return jsonify(pacientes_sala_espera)
+
 # ======================= SISTEMA DE RECEPCIÓN =======================
 
 @app.route("/api/turnos/recepcionar", methods=["PUT"])
@@ -837,7 +942,7 @@ def recepcionar_paciente():
 
 @app.route("/api/turnos/sala-espera", methods=["PUT"])
 @login_requerido
-@rol_permitido(["secretaria"])
+@rol_permitido(["secretaria", "administrador"])
 def mover_a_sala_espera():
     """Mover paciente recepcionado a sala de espera y registrar pago"""
     data = request.json
@@ -846,6 +951,7 @@ def mover_a_sala_espera():
     hora = data.get("hora")
     monto = data.get("monto", 0)  # Puede ser 0 para obra social
     observaciones = data.get("observaciones", "")
+    tipo_pago = data.get("tipo_pago", "efectivo")  # Nuevo campo para tipo de pago
      
     if not all([dni_paciente, fecha, hora]):
         return jsonify({"error": "DNI, fecha y hora son requeridos"}), 400
@@ -858,6 +964,11 @@ def mover_a_sala_espera():
     except (ValueError, TypeError):
         return jsonify({"error": "Monto inválido"}), 400
 
+    # Validar tipo de pago
+    if monto == 0:
+        tipo_pago = "obra_social"
+    elif tipo_pago not in ["efectivo", "transferencia"]:
+        return jsonify({"error": "Tipo de pago inválido. Debe ser 'efectivo' o 'transferencia'"}), 400
 
     turnos = cargar_json(TURNOS_FILE)
     pacientes = cargar_json(PACIENTES_FILE)
@@ -891,9 +1002,6 @@ def mover_a_sala_espera():
     if pago_existente:
         return jsonify({"error": "Ya existe un pago registrado para este paciente en este turno"}), 400
     
-    if pago_existente:
-        return jsonify({"error": "Ya existe un pago registrado para este paciente en este turno"}), 400
-    
     # Registrar el pago
     nuevo_pago = {
         "id": len(pagos) + 1,
@@ -904,7 +1012,8 @@ def mover_a_sala_espera():
         "hora": hora,  # Guardar la hora del turno en el pago
         "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": observaciones,
-        "obra_social": paciente.get("obra_social", "")
+        "obra_social": paciente.get("obra_social", ""),
+        "tipo_pago": tipo_pago  # Agregar tipo de pago
     }
      
     pagos.append(nuevo_pago)
@@ -971,6 +1080,13 @@ def cobrar_y_mover_a_sala():
     if pago_existente:
         return jsonify({"error": "Ya existe un pago registrado para este paciente en esta fecha"}), 400
     
+    # Determinar tipo de pago
+    tipo_pago = data.get("tipo_pago", "efectivo")
+    if monto == 0:
+        tipo_pago = "obra_social"
+    elif tipo_pago not in ["efectivo", "transferencia"]:
+        return jsonify({"error": "Tipo de pago inválido"}), 400
+    
     # Registrar el pago
     nuevo_pago = {
         "id": len(pagos) + 1,
@@ -980,7 +1096,8 @@ def cobrar_y_mover_a_sala():
         "fecha": fecha,
         "fecha_registro": datetime.now(timezone_ar).isoformat(),
         "observaciones": observaciones,
-        "obra_social": paciente.get("obra_social", "")
+        "obra_social": paciente.get("obra_social", ""),
+        "tipo_pago": tipo_pago
     }
     
     pagos.append(nuevo_pago)
@@ -1000,7 +1117,7 @@ def cobrar_y_mover_a_sala():
 
 @app.route("/api/turnos/dia", methods=["GET"])
 @login_requerido
-@rol_permitido(["secretaria", "medico"])
+@rol_permitido(["secretaria", "medico", "administrador"])
 def obtener_turnos_dia():
     """Obtener todos los turnos de una fecha específica (por defecto hoy)"""
     fecha = request.args.get("fecha", date.today().isoformat())
@@ -1044,6 +1161,155 @@ def limpiar_turnos_vencidos():
             nuevos.append(t)
     guardar_json(TURNOS_FILE, nuevos)
     return jsonify({"eliminados": eliminados, "ok": True})
+
+# ========================== ADMINISTRADOR ============================
+
+@app.route("/administrador")
+@login_requerido
+@rol_requerido("administrador")
+def vista_administrador():
+    return render_template("administrador_fixed.html")
+
+@app.route("/api/pagos/estadisticas-admin", methods=["GET"])
+@login_requerido
+@rol_requerido("administrador")
+def obtener_estadisticas_pagos_admin():
+    """Obtener estadísticas de pagos para administradores"""
+    mes = request.args.get("mes")
+    if not mes:
+        mes = datetime.now().strftime("%Y-%m")
+    
+    pagos = cargar_json(PAGOS_FILE)
+    pacientes = cargar_json(PACIENTES_FILE)
+    
+    # Filtrar pagos del mes
+    pagos_mes = [p for p in pagos if p.get("fecha", "").startswith(mes)]
+    
+    # Calcular estadísticas generales
+    total_mes = sum(p.get("monto", 0) for p in pagos_mes)
+    pagos_particulares = len([p for p in pagos_mes if p.get("monto", 0) > 0])
+    pagos_obra_social = len([p for p in pagos_mes if p.get("monto", 0) == 0])
+    cantidad_pagos_mes = len(pagos_mes)
+    
+    # Estadísticas por tipo de pago
+    pagos_efectivo = [p for p in pagos_mes if p.get("tipo_pago") == "efectivo"]
+    pagos_transferencia = [p for p in pagos_mes if p.get("tipo_pago") == "transferencia"]
+    pagos_obra_social_list = [p for p in pagos_mes if p.get("tipo_pago") == "obra_social"]
+    
+    total_efectivo = sum(p.get("monto", 0) for p in pagos_efectivo)
+    total_transferencia = sum(p.get("monto", 0) for p in pagos_transferencia)
+    total_obra_social = sum(p.get("monto", 0) for p in pagos_obra_social_list)
+    
+    # Agrupar por día
+    detalle_por_dia = {}
+    for pago in pagos_mes:
+        fecha = pago.get("fecha")
+        if fecha not in detalle_por_dia:
+            detalle_por_dia[fecha] = {
+                "cantidad": 0,
+                "monto": 0,
+                "pacientes": []
+            }
+        
+        detalle_por_dia[fecha]["cantidad"] += 1
+        detalle_por_dia[fecha]["monto"] += pago.get("monto", 0)
+        
+        # Buscar datos del paciente
+        paciente = next((p for p in pacientes if p["dni"] == pago.get("dni_paciente")), {})
+        detalle_por_dia[fecha]["pacientes"].append({
+            "nombre": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
+            "monto": pago.get("monto", 0),
+            "obra_social": paciente.get("obra_social", ""),
+            "tipo_pago": pago.get("tipo_pago", "efectivo")
+        })
+    
+    return jsonify({
+        "total_mes": total_mes,
+        "pagos_particulares": pagos_particulares,
+        "pagos_obra_social": pagos_obra_social,
+        "cantidad_pagos_mes": cantidad_pagos_mes,
+        "detalle_por_dia": detalle_por_dia,
+        # Nuevas estadísticas por tipo de pago
+        "pagos_efectivo": len(pagos_efectivo),
+        "pagos_transferencia": len(pagos_transferencia),
+        "pagos_obra_social_count": len(pagos_obra_social_list),
+        "total_efectivo": total_efectivo,
+        "total_transferencia": total_transferencia,
+        "total_obra_social": total_obra_social
+    })
+
+@app.route("/api/pagos/exportar-admin", methods=["GET"])
+@login_requerido
+@rol_requerido("administrador")
+def exportar_pagos_csv_admin():
+    """Exportar pagos a CSV para administradores"""
+    from datetime import datetime
+    pagos = cargar_json(PAGOS_FILE)
+    pacientes = cargar_json(PACIENTES_FILE)
+    
+    fecha_param = request.args.get("fecha")
+    mes = request.args.get("mes")
+    pagos_filtrados = pagos
+    nombre_archivo = "pagos"
+    
+    if fecha_param:
+        try:
+            fecha_dia = datetime.strptime(fecha_param, "%Y-%m-%d").date()
+        except ValueError:
+            fecha_dia = date.today()
+        pagos_filtrados = [p for p in pagos if p.get("fecha", "") == fecha_dia.isoformat()]
+        nombre_archivo += f"_{fecha_dia.isoformat()}"
+    elif mes:
+        pagos_filtrados = [p for p in pagos if p.get("fecha", "").startswith(mes)]
+        nombre_archivo += f"_{mes}"
+    else:
+        mes_actual = datetime.now().strftime("%Y-%m")
+        pagos_filtrados = [p for p in pagos if p.get("fecha", "").startswith(mes_actual)]
+        nombre_archivo += f"_{mes_actual}"
+    
+    # Calcular subtotales si es por día
+    if fecha_param:
+        subtotal_efectivo = sum(p["monto"] for p in pagos_filtrados if p.get("tipo_pago") == "efectivo")
+        subtotal_transferencia = sum(p["monto"] for p in pagos_filtrados if p.get("tipo_pago") == "transferencia")
+        subtotal_obra_social = sum(p["monto"] for p in pagos_filtrados if p.get("tipo_pago") == "obra_social")
+        total = subtotal_efectivo + subtotal_transferencia
+    
+    # Crear CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Fecha', 'DNI', 'Nombre', 'Apellido', 'Monto', 'Tipo de Pago', 'Obra Social', 'Observaciones'])
+    
+    for pago in pagos_filtrados:
+        paciente = next((p for p in pacientes if p["dni"] == pago.get("dni_paciente")), {})
+        writer.writerow([
+            pago.get("fecha", ""),
+            pago.get("dni_paciente", ""),
+            paciente.get("nombre", ""),
+            paciente.get("apellido", ""),
+            pago.get("monto", 0),
+            pago.get("tipo_pago", "efectivo"),
+            paciente.get("obra_social", ""),
+            pago.get("observaciones", "")
+        ])
+    
+    # Subtotales solo si es por día
+    if fecha_param:
+        writer.writerow([])
+        writer.writerow(["", "", "", "", "Subtotal Efectivo", subtotal_efectivo, "", ""])
+        writer.writerow(["", "", "", "", "Subtotal Transferencia", subtotal_transferencia, "", ""])
+        writer.writerow(["", "", "", "", "Subtotal Obra Social", subtotal_obra_social, "", ""])
+        writer.writerow(["", "", "", "", "TOTAL", total, "", ""])
+    
+    output.seek(0)
+    return make_response(
+        output.getvalue(),
+        200,
+        {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': f'attachment; filename={nombre_archivo}.csv'
+        }
+    )
+
 # ====================================================
 
 
