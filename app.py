@@ -330,10 +330,14 @@ def registrar_paciente():
 @rol_requerido("secretaria")
 def actualizar_paciente(dni):
     data = request.json
-    campos = ["nombre", "apellido", "obra_social", "numero_obra_social", "celular"]
+    campos = ["nombre", "apellido", "dni", "obra_social", "numero_obra_social", "celular"]
     for campo in campos:
         if not data.get(campo):
             return jsonify({"error": f"El campo '{campo}' es obligatorio"}), 400
+
+    # Validar formato del DNI
+    if not data["dni"].isdigit() or len(data["dni"]) not in [7, 8]:
+        return jsonify({"error": "DNI inválido"}), 400
 
     # Calcular edad automáticamente si se proporciona fecha de nacimiento
     if data.get("fecha_nacimiento"):
@@ -342,15 +346,50 @@ def actualizar_paciente(dni):
 
     pacientes = cargar_json(PACIENTES_FILE)
     
+    # Si el DNI cambió, verificar que el nuevo DNI no esté en uso
+    if data["dni"] != dni:
+        if any(p["dni"] == data["dni"] for p in pacientes):
+            return jsonify({"error": "Ya existe un paciente con ese DNI"}), 400
+    
     for i, paciente in enumerate(pacientes):
         if paciente["dni"] == dni:
-            # Actualizar todos los campos excepto el DNI
+            # Actualizar todos los campos incluyendo el DNI
             for campo, valor in data.items():
-                if campo != "dni":
-                    pacientes[i][campo] = valor
+                pacientes[i][campo] = valor
             
             guardar_json(PACIENTES_FILE, pacientes)
             return jsonify({"mensaje": "Paciente actualizado correctamente"})
+    
+    return jsonify({"error": "Paciente no encontrado"}), 404
+
+
+@app.route("/api/pacientes/<dni>", methods=["DELETE"])
+@login_requerido
+@rol_requerido("secretaria")
+def eliminar_paciente(dni):
+    pacientes = cargar_json(PACIENTES_FILE)
+    
+    # Verificar si el paciente tiene turnos asociados
+    turnos = cargar_json(TURNOS_FILE)
+    turnos_del_paciente = [t for t in turnos if t.get("dni_paciente") == dni]
+    
+    if turnos_del_paciente:
+        return jsonify({
+            "error": f"No se puede eliminar el paciente. Tiene {len(turnos_del_paciente)} turno(s) asociado(s). Primero cancele todos sus turnos."
+        }), 400
+    
+    # Buscar y eliminar el paciente
+    for i, paciente in enumerate(pacientes):
+        if paciente["dni"] == dni:
+            pacientes.pop(i)
+            guardar_json(PACIENTES_FILE, pacientes)
+            
+            # También eliminar historias clínicas del paciente
+            historias = cargar_json(HISTORIAS_FILE)
+            historias_filtradas = [h for h in historias if h.get("dni") != dni]
+            guardar_json(HISTORIAS_FILE, historias_filtradas)
+            
+            return jsonify({"mensaje": "Paciente eliminado correctamente"})
     
     return jsonify({"error": "Paciente no encontrado"}), 404
 
