@@ -3,6 +3,7 @@ import json
 import os
 import csv
 import io
+import shutil
 from functools import wraps
 from datetime import datetime, date, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -15,21 +16,45 @@ app.secret_key = os.environ.get("SECRET_KEY", "clave_insegura_dev")
 import pytz
 timezone_ar = pytz.timezone('America/Argentina/Buenos_Aires')
 
-DATA_FILE = "historias_clinicas.json"
-USUARIOS_FILE = "usuarios.json"
-PACIENTES_FILE = "pacientes.json"
-TURNOS_FILE = "turnos.json"
-AGENDA_FILE = "agenda.json"
-PAGOS_FILE = "pagos.json"
+
+
+# Rutas de archivo usando el disco persistente
+DATA_FILE = "/data/historias_clinicas.json"
+USUARIOS_FILE = "/data/usuarios.json"
+PACIENTES_FILE = "/data/pacientes.json"
+TURNOS_FILE = "/data/turnos.json"
+AGENDA_FILE = "/data/agenda.json"
+PAGOS_FILE = "/data/pagos.json"
+
+# (OPCIONAL) Copiar archivos antiguos si todavía existen en la raíz
+def mover_a_persistencia(nombre_archivo):
+    origen = nombre_archivo
+    destino = f"/data/{nombre_archivo}"
+    
+    if os.path.exists(origen) and not os.path.exists(destino):
+        try:
+            shutil.copy(origen, destino)
+            print(f"✅ Archivo '{nombre_archivo}' copiado a /data")
+        except Exception as e:
+            print(f"❌ Error al copiar '{nombre_archivo}':", e)
+    else:
+        print(f"🔁 '{nombre_archivo}' ya existe en /data o no se encontró en el origen.")
+
+archivos_para_mover = [
+    "historias_clinicas.json",
+    "usuarios.json",
+    "pacientes.json",
+    "turnos.json",
+    "agenda.json",
+    "pagos.json"
+]
+
+for archivo in archivos_para_mover:
+    mover_a_persistencia(archivo)
 
 
 
-@app.route('/descargar/<archivo>')
-def descargar_archivo(archivo):
-    try:
-        return send_file(archivo, as_attachment=True)
-    except FileNotFoundError:
-        return f"Archivo '{archivo}' no encontrado", 404
+
 
 
 
@@ -118,6 +143,16 @@ def rol_permitido(varios_roles):
 
 
 # ========================== RUTAS GENERALES ============================
+
+@app.route('/descargar/<archivo>')
+@login_requerido
+@rol_requerido("administrador")
+def descargar_archivo(archivo):
+    ruta = f"/data/{archivo}"
+    if os.path.exists(ruta):
+        return send_file(ruta, as_attachment=True)
+    else:
+        return f"Archivo '{archivo}' no encontrado", 404
 
 
 @app.route("/login", methods=["GET", "POST"])
