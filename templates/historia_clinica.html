@@ -295,7 +295,7 @@
           let fecha = 'Fecha no especificada';
           if (h.fecha_consulta) {
             const [y, m, d] = h.fecha_consulta.split('-');
-            const fechaLocal = new Date(Number(y), Number(m)-1, Number(d));
+            const fechaLocal = new Date(Number(y), Number(m)-1, Number(d), 12, 0, 0);
             fecha = fechaLocal.toLocaleDateString('es-ES');
           }
           html += `
