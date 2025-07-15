@@ -205,29 +205,112 @@
 
   <!-- Modal para asignar turno -->
   <div class="modal fade" id="modalTurno" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
       <div class="modal-content">
-        <form id="form-turno">
-          <div class="modal-header">
-            <h5 class="modal-title">Asignar Turno</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        <div class="modal-header">
+          <h5 class="modal-title">Asignar Turno</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p id="info-turno" class="mb-3"></p>
+          <div class="mb-3">
+            <label for="fecha-turno" class="form-label">Fecha del Turno:</label>
+            <input type="date" id="fecha-turno" class="form-control" required />
           </div>
-          <div class="modal-body">
-            <p id="info-turno" class="mb-3"></p>
-            <div class="mb-3">
-              <label for="fecha-turno" class="form-label">Fecha del Turno:</label>
-              <input type="date" id="fecha-turno" class="form-control" required />
+
+          <!-- Pestañas para elegir entre buscar paciente o registrar nuevo -->
+          <ul class="nav nav-tabs mb-3" id="turno-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="buscar-tab" data-bs-toggle="tab" data-bs-target="#buscar-paciente" type="button" role="tab">
+                🔍 Buscar Paciente Existente
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="registrar-tab" data-bs-toggle="tab" data-bs-target="#registrar-paciente" type="button" role="tab">
+                👤 Registrar Nuevo Paciente
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="turno-tab-content">
+            <!-- Pestaña: Buscar Paciente Existente -->
+            <div class="tab-pane fade show active" id="buscar-paciente" role="tabpanel">
+              <form id="form-turno-existente">
+                <div class="mb-3">
+                  <label for="buscar-paciente-input" class="form-label">Buscar por DNI o Apellido:</label>
+                  <input type="text" id="buscar-paciente-input" class="form-control" placeholder="Escriba DNI o apellido..." oninput="filtrarPacientes()">
+                </div>
+                <div class="mb-3">
+                  <label for="paciente-select" class="form-label">Seleccionar Paciente:</label>
+                  <select id="paciente-select" class="form-select" required></select>
+                </div>
+                <div class="modal-footer">
+                  <button type="submit" class="btn btn-success">Asignar Turno</button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+              </form>
             </div>
-            <div class="mb-3">
-              <label for="paciente-select" class="form-label">Seleccionar Paciente:</label>
-              <select id="paciente-select" class="form-select" required></select>
+
+            <!-- Pestaña: Registrar Nuevo Paciente -->
+            <div class="tab-pane fade" id="registrar-paciente" role="tabpanel">
+              <form id="form-nuevo-paciente">
+                <div class="alert alert-info">
+                  <small><i class="bi bi-info-circle"></i> Complete los datos del nuevo paciente. Al guardar se creará el paciente y se asignará automáticamente al turno.</small>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label for="nuevo-nombre" class="form-label">Nombre:</label>
+                      <input type="text" id="nuevo-nombre" class="form-control" required>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label for="nuevo-apellido" class="form-label">Apellido:</label>
+                      <input type="text" id="nuevo-apellido" class="form-control" required>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label for="nuevo-dni" class="form-label">DNI:</label>
+                      <input type="text" id="nuevo-dni" class="form-control" required>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label for="nuevo-fecha-nacimiento" class="form-label">Fecha de Nacimiento:</label>
+                      <input type="date" id="nuevo-fecha-nacimiento" class="form-control" required>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label for="nuevo-obra-social" class="form-label">Obra Social:</label>
+                      <input type="text" id="nuevo-obra-social" class="form-control" required>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label for="nuevo-numero-obra-social" class="form-label">N° Obra Social:</label>
+                      <input type="text" id="nuevo-numero-obra-social" class="form-control" required>
+                    </div>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="nuevo-celular" class="form-label">Celular:</label>
+                  <input type="text" id="nuevo-celular" class="form-control" required>
+                </div>
+                <div class="modal-footer">
+                  <button type="submit" class="btn btn-primary">Registrar y Asignar Turno</button>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+              </form>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-success">Asignar</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   </div>
@@ -604,6 +687,26 @@ document.addEventListener('DOMContentLoaded', renderTablaEditableAgenda);
       // Pre-llenar la fecha del turno
       document.getElementById("fecha-turno").value = fechaSeleccionada;
 
+      // Resetear pestañas - activar la primera (buscar paciente existente)
+      const buscarTab = document.getElementById("buscar-tab");
+      const registrarTab = document.getElementById("registrar-tab");
+      const buscarPane = document.getElementById("buscar-paciente");
+      const registrarPane = document.getElementById("registrar-paciente");
+      
+      buscarTab.classList.add("active");
+      registrarTab.classList.remove("active");
+      buscarPane.classList.add("show", "active");
+      registrarPane.classList.remove("show", "active");
+
+      // Limpiar formularios
+      document.getElementById("form-turno-existente").reset();
+      document.getElementById("form-nuevo-paciente").reset();
+      document.getElementById("buscar-paciente-input").value = "";
+      
+      // Re-llenar la fecha en ambos casos ya que reset() la limpia
+      document.getElementById("fecha-turno").value = fechaSeleccionada;
+
+      // Inicializar select de pacientes
       const select = document.getElementById("paciente-select");
       select.innerHTML = pacientes.map(p =>
         `<option value="${p.dni}">${p.apellido}, ${p.nombre} (${p.dni})</option>`
@@ -640,7 +743,32 @@ document.addEventListener('DOMContentLoaded', renderTablaEditableAgenda);
       modal.show();
     }
 
-    document.getElementById("form-turno").addEventListener("submit", e => {
+    // Función para filtrar pacientes en tiempo real
+    function filtrarPacientes() {
+      const filtro = document.getElementById("buscar-paciente-input").value.toLowerCase();
+      const select = document.getElementById("paciente-select");
+      
+      if (!filtro) {
+        // Mostrar todos los pacientes
+        select.innerHTML = pacientes.map(p =>
+          `<option value="${p.dni}">${p.apellido}, ${p.nombre} (${p.dni})</option>`
+        ).join("");
+      } else {
+        // Filtrar pacientes por DNI o apellido
+        const pacientesFiltrados = pacientes.filter(p => 
+          p.dni.includes(filtro) || 
+          p.apellido.toLowerCase().includes(filtro) ||
+          p.nombre.toLowerCase().includes(filtro)
+        );
+        
+        select.innerHTML = pacientesFiltrados.map(p =>
+          `<option value="${p.dni}">${p.apellido}, ${p.nombre} (${p.dni})</option>`
+        ).join("");
+      }
+    }
+
+    // Event listener para asignar turno a paciente existente
+    document.getElementById("form-turno-existente").addEventListener("submit", e => {
       e.preventDefault();
       const dni_paciente = document.getElementById("paciente-select").value;
       const fecha = document.getElementById("fecha-turno").value;
@@ -688,6 +816,97 @@ document.addEventListener('DOMContentLoaded', renderTablaEditableAgenda);
       .catch(error => {
         alert("Error de conexión: " + error.message);
       });
+    });
+
+    // Event listener para registrar nuevo paciente y asignar turno
+    document.getElementById("form-nuevo-paciente").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const fecha = document.getElementById("fecha-turno").value;
+      if (!fecha) return alert("Debe seleccionar una fecha");
+
+      // Recopilar datos del nuevo paciente
+      const datosPaciente = {
+        nombre: document.getElementById("nuevo-nombre").value.trim(),
+        apellido: document.getElementById("nuevo-apellido").value.trim(),
+        dni: document.getElementById("nuevo-dni").value.trim(),
+        fecha_nacimiento: document.getElementById("nuevo-fecha-nacimiento").value,
+        obra_social: document.getElementById("nuevo-obra-social").value.trim(),
+        numero_obra_social: document.getElementById("nuevo-numero-obra-social").value.trim(),
+        celular: document.getElementById("nuevo-celular").value.trim()
+      };
+
+      // Calcular edad
+      if (datosPaciente.fecha_nacimiento) {
+        const hoy = new Date();
+        const fechaNac = new Date(datosPaciente.fecha_nacimiento);
+        let edad = hoy.getFullYear() - fechaNac.getFullYear();
+        const mesActual = hoy.getMonth();
+        const mesNacimiento = fechaNac.getMonth();
+        
+        if (mesActual < mesNacimiento || (mesActual === mesNacimiento && hoy.getDate() < fechaNac.getDate())) {
+          edad--;
+        }
+        datosPaciente.edad = edad >= 0 ? edad : 0;
+      }
+
+      try {
+        // 1. Registrar el nuevo paciente
+        const respuestaPaciente = await fetch("/api/pacientes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(datosPaciente)
+        });
+
+        const resultadoPaciente = await respuestaPaciente.json();
+
+        if (!respuestaPaciente.ok) {
+          throw new Error(resultadoPaciente.error || "Error al registrar paciente");
+        }
+
+        // 2. Asignar el turno al nuevo paciente
+        const respuestaTurno = await fetch("/api/turnos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...turnoActual, fecha, dni_paciente: datosPaciente.dni })
+        });
+
+        const resultadoTurno = await respuestaTurno.json();
+
+        if (!respuestaTurno.ok) {
+          throw new Error(resultadoTurno.error || "Error al asignar turno");
+        }
+
+        // 3. Cerrar modal y mostrar confirmación
+        const modal = bootstrap.Modal.getInstance(document.getElementById("modalTurno"));
+        modal.hide();
+
+        const fechaFormateada = formatearFechaLocal(fecha);
+        const mensaje = `
+          ¡Paciente registrado y turno asignado exitosamente! 🎉
+          
+          👤 Nuevo Paciente: ${datosPaciente.nombre} ${datosPaciente.apellido}
+          🆔 DNI: ${datosPaciente.dni}
+          📅 Fecha: ${fechaFormateada}
+          ⏰ Hora: ${turnoActual.hora}
+          👨‍⚕️ Médico: ${turnoActual.medico}
+          
+          ¿Qué deseas hacer ahora?
+        `;
+
+        if (confirm(mensaje + "\n\nPresiona OK para registrar otro paciente o Cancelar para quedarte en la agenda")) {
+          window.location.href = "/pacientes";
+        } else {
+          // Recargar datos y actualizar la vista
+          pacientes.push(datosPaciente); // Agregar a la lista local
+          fetchTurnos().then(() => {
+            cargarAgendaParaFecha(); // Esto actualiza los turnos del día y re-renderiza
+          });
+        }
+
+      } catch (error) {
+        alert("Error: " + error.message);
+      }
     });
 
     async function fetchTurnos() {
