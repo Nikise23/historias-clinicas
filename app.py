@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session, make_response
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session, make_response, send_file
 import json
 import os
 import csv
@@ -21,6 +21,17 @@ PACIENTES_FILE = "pacientes.json"
 TURNOS_FILE = "turnos.json"
 AGENDA_FILE = "agenda.json"
 PAGOS_FILE = "pagos.json"
+
+
+
+@app.route('/descargar/<archivo>')
+def descargar_archivo(archivo):
+    try:
+        return send_file(archivo, as_attachment=True)
+    except FileNotFoundError:
+        return f"Archivo '{archivo}' no encontrado", 404
+
+
 
 # ===================== Funciones auxiliares ======================
 
