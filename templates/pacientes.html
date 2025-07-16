@@ -145,7 +145,10 @@
             <p class="font-semibold">${p.nombre} ${p.apellido}</p>
             <p class="text-sm">DNI: ${p.dni} | ${p.edad ? 'Edad: ' + p.edad : ''}</p>
             <p class="text-sm">Obra Social: ${p.obra_social} | Celular: ${p.celular}</p>
-            <button onclick='editarPaciente(${JSON.stringify(p)})' class="mt-2 text-sm text-primary hover:underline">Editar</button>
+            <div class="mt-2 flex gap-2">
+              <button onclick='editarPaciente(${JSON.stringify(p)})' class="text-sm text-primary hover:underline">Editar</button>
+              <button onclick='eliminarPaciente("${p.dni}", "${p.nombre} ${p.apellido}")' class="text-sm text-red-600 hover:underline">Eliminar</button>
+            </div>
           `;
           lista.appendChild(div);
         });
@@ -154,7 +157,7 @@
     function editarPaciente(p) {
       document.getElementById("form-title").innerText = "Modificar Paciente";
       document.getElementById("dni").value = p.dni;
-      document.getElementById("dni").readOnly = true;
+      document.getElementById("dni").readOnly = false; // Permitir editar DNI
       document.getElementById("nombre").value = p.nombre;
       document.getElementById("apellido").value = p.apellido;
       document.getElementById("fecha_nacimiento").value = p.fecha_nacimiento || '';
@@ -162,6 +165,8 @@
       document.getElementById("obra_social").value = p.obra_social;
       document.getElementById("numero_obra_social").value = p.numero_obra_social;
       document.getElementById("celular").value = p.celular;
+      // Guardar el DNI original para la actualización
+      document.getElementById("form-paciente").dataset.dniOriginal = p.dni;
     }
 
     function limpiarFormulario() {
@@ -170,7 +175,37 @@
       document.getElementById("dni").readOnly = false;
       document.getElementById("mensaje").innerText = "";
       document.getElementById('acciones-post-registro').classList.add('hidden');
+      // Limpiar el DNI original
+      document.getElementById("form-paciente").removeAttribute('data-dni-original');
       ultimoPacienteRegistrado = null;
+    }
+
+    async function eliminarPaciente(dni, nombreCompleto) {
+      if (!confirm(`¿Está seguro que desea eliminar al paciente ${nombreCompleto} (DNI: ${dni})?\n\nEsta acción no se puede deshacer.`)) {
+        return;
+      }
+
+      try {
+        const respuesta = await fetch(`/api/pacientes/${dni}`, {
+          method: "DELETE",
+        });
+
+        const resultado = await respuesta.json();
+        
+        if (respuesta.ok) {
+          alert("Paciente eliminado correctamente");
+          cargarPacientes(); // Recargar la lista
+          // Si el paciente eliminado está siendo editado, limpiar el formulario
+          const dniOriginal = document.getElementById("form-paciente").dataset.dniOriginal;
+          if (dniOriginal === dni) {
+            limpiarFormulario();
+          }
+        } else {
+          alert("Error: " + resultado.error);
+        }
+      } catch (error) {
+        alert("Error al eliminar el paciente: " + error.message);
+      }
     }
 
     document.getElementById("form-paciente").addEventListener("submit", async (e) => {
@@ -196,8 +231,9 @@
         return;
       }
 
-      const metodo = document.getElementById("dni").readOnly ? "PUT" : "POST";
-      const url = metodo === "PUT" ? `/api/pacientes/${datos.dni}` : "/api/pacientes";
+      const dniOriginal = document.getElementById("form-paciente").dataset.dniOriginal;
+      const metodo = dniOriginal ? "PUT" : "POST";
+      const url = metodo === "PUT" ? `/api/pacientes/${dniOriginal}` : "/api/pacientes";
 
       const respuesta = await fetch(url, {
         method: metodo,

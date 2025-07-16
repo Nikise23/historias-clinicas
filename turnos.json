@@ -1,3 +1,796 @@
 [
-      
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "16:00",
+        "fecha": "2025-07-21",
+        "dni_paciente": "53198718",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "16:15",
+        "fecha": "2025-07-16",
+        "dni_paciente": "36312757",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:15",
+        "fecha": "2025-07-21",
+        "dni_paciente": "44258952",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:00",
+        "fecha": "2025-07-15",
+        "dni_paciente": "46288247",
+        "estado": "atendido",
+        "hora_recepcion": "14:50",
+        "hora_sala_espera": "14:51",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:10",
+        "fecha": "2025-07-15",
+        "dni_paciente": "42393760",
+        "estado": "atendido",
+        "hora_recepcion": "15:06",
+        "hora_sala_espera": "15:07",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:20",
+        "fecha": "2025-07-15",
+        "dni_paciente": "41582174",
+        "estado": "atendido",
+        "hora_recepcion": "15:14",
+        "hora_sala_espera": "15:14",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:30",
+        "fecha": "2025-07-15",
+        "dni_paciente": "47962950",
+        "estado": "atendido",
+        "hora_recepcion": "15:27",
+        "hora_sala_espera": "15:27",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:40",
+        "fecha": "2025-07-15",
+        "dni_paciente": "27794158",
+        "estado": "atendido",
+        "hora_recepcion": "15:32",
+        "hora_sala_espera": "15:32",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "16:55",
+        "fecha": "2025-07-21",
+        "dni_paciente": "56405114",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "16:56",
+        "fecha": "2025-07-21",
+        "dni_paciente": "53994076",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "16:57",
+        "fecha": "2025-07-21",
+        "dni_paciente": "28776796",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "16:01",
+        "fecha": "2025-07-15",
+        "dni_paciente": "42644602",
+        "estado": "atendido",
+        "hora_recepcion": "15:49",
+        "hora_sala_espera": "15:49",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "16:00",
+        "fecha": "2025-07-15",
+        "dni_paciente": "37123683",
+        "estado": "atendido",
+        "hora_recepcion": "15:40",
+        "hora_sala_espera": "15:40",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "16:10",
+        "fecha": "2025-07-15",
+        "dni_paciente": "37695838",
+        "estado": "atendido",
+        "hora_recepcion": "16:03",
+        "hora_sala_espera": "16:03",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "16:11",
+        "fecha": "2025-07-15",
+        "dni_paciente": "51160691",
+        "estado": "atendido",
+        "hora_recepcion": "16:03",
+        "hora_sala_espera": "16:03",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:06",
+        "fecha": "2025-07-15",
+        "dni_paciente": "39233288",
+        "estado": "atendido",
+        "hora_recepcion": "16:40",
+        "hora_sala_espera": "16:41",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:08",
+        "fecha": "2025-07-15",
+        "dni_paciente": "96186032",
+        "estado": "atendido",
+        "hora_recepcion": "16:49",
+        "hora_sala_espera": "16:49",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:20",
+        "fecha": "2025-07-15",
+        "dni_paciente": "38680129",
+        "estado": "atendido",
+        "hora_recepcion": "17:12",
+        "hora_sala_espera": "17:12",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:00",
+        "fecha": "2025-07-15",
+        "dni_paciente": "58519081",
+        "estado": "atendido",
+        "hora_recepcion": "16:28",
+        "hora_sala_espera": "16:29",
+        "pago_registrado": true,
+        "monto_pagado": 1000.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "16:05",
+        "fecha": "2025-07-15",
+        "dni_paciente": "54646411",
+        "estado": "atendido",
+        "hora_recepcion": "15:57",
+        "hora_sala_espera": "15:58",
+        "pago_registrado": true,
+        "monto_pagado": 22000.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:55",
+        "fecha": "2025-07-15",
+        "dni_paciente": "49533954",
+        "estado": "atendido",
+        "hora_recepcion": "15:13",
+        "hora_sala_espera": "15:13",
+        "pago_registrado": true,
+        "monto_pagado": 10000.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:15",
+        "fecha": "2025-07-15",
+        "dni_paciente": "56269939",
+        "estado": "atendido",
+        "hora_recepcion": "15:03",
+        "hora_sala_espera": "15:03",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:45",
+        "fecha": "2025-07-15",
+        "dni_paciente": "32593204",
+        "estado": "atendido",
+        "hora_recepcion": "15:26",
+        "hora_sala_espera": "15:26",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "10:15",
+        "fecha": "2025-07-17",
+        "dni_paciente": "29186239",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "10:17",
+        "fecha": "2025-07-17",
+        "dni_paciente": "54227610",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "16:55",
+        "fecha": "2025-07-22",
+        "dni_paciente": "43.777.272",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "14:55",
+        "fecha": "2025-07-15",
+        "dni_paciente": "34852827",
+        "estado": "atendido",
+        "hora_recepcion": "14:40",
+        "hora_sala_espera": "14:40",
+        "pago_registrado": true,
+        "monto_pagado": 22000.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:25",
+        "fecha": "2025-07-21",
+        "dni_paciente": "49307931",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:26",
+        "fecha": "2025-07-21",
+        "dni_paciente": "32639307",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "15:00",
+        "fecha": "2025-07-16",
+        "dni_paciente": "18003386",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "14:50",
+        "fecha": "2025-07-16",
+        "dni_paciente": "26027050",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "15:05",
+        "fecha": "2025-07-16",
+        "dni_paciente": "47831895",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "15:00",
+        "fecha": "2025-07-16",
+        "dni_paciente": "21107872",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "15:15",
+        "fecha": "2025-07-16",
+        "dni_paciente": "33895069",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "16:30",
+        "fecha": "2025-07-16",
+        "dni_paciente": "50147423",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "15:40",
+        "fecha": "2025-07-16",
+        "dni_paciente": "30085692",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "15:10",
+        "fecha": "2025-07-16",
+        "dni_paciente": "39882450",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "15:35",
+        "fecha": "2025-07-16",
+        "dni_paciente": "36688048",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "15:05",
+        "fecha": "2025-07-16",
+        "dni_paciente": "26651308",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:05",
+        "fecha": "2025-07-15",
+        "dni_paciente": "560488327",
+        "estado": "atendido",
+        "hora_recepcion": "15:40",
+        "hora_sala_espera": "15:40",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "16:00",
+        "fecha": "2025-07-16",
+        "dni_paciente": "45494680",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:25",
+        "fecha": "2025-07-22",
+        "dni_paciente": "41028322",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:24",
+        "fecha": "2025-07-22",
+        "dni_paciente": "55801688",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "09:25",
+        "fecha": "2025-07-24",
+        "dni_paciente": "58371096",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:35",
+        "fecha": "2025-07-15",
+        "dni_paciente": "70784469",
+        "estado": "atendido",
+        "hora_recepcion": "15:11",
+        "hora_sala_espera": "15:11",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "15:10",
+        "fecha": "2025-07-16",
+        "dni_paciente": "42877840",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "14:40",
+        "fecha": "2025-07-16",
+        "dni_paciente": "10284251",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:57",
+        "fecha": "2025-07-15",
+        "dni_paciente": "47454940",
+        "estado": "atendido",
+        "hora_recepcion": "15:21",
+        "hora_sala_espera": "15:22",
+        "pago_registrado": true,
+        "monto_pagado": 4500.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:56",
+        "fecha": "2025-07-15",
+        "dni_paciente": "53836445",
+        "estado": "atendido",
+        "hora_recepcion": "15:23",
+        "hora_sala_espera": "15:23",
+        "pago_registrado": true,
+        "monto_pagado": 4500.0
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "16:05",
+        "fecha": "2025-07-16",
+        "dni_paciente": "53301677",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:12",
+        "fecha": "2025-07-15",
+        "dni_paciente": "26762652",
+        "estado": "atendido",
+        "hora_recepcion": "16:43",
+        "hora_sala_espera": "16:44",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:35",
+        "fecha": "2025-07-22",
+        "dni_paciente": "55953600",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:15",
+        "fecha": "2025-07-22",
+        "dni_paciente": "56269939",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "15:35",
+        "fecha": "2025-07-23",
+        "dni_paciente": "29644898",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "09:25",
+        "fecha": "2025-07-17",
+        "dni_paciente": "49813887",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "09:20",
+        "fecha": "2025-07-17",
+        "dni_paciente": "53198718",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "09:30",
+        "fecha": "2025-07-17",
+        "dni_paciente": "560488327",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:11",
+        "fecha": "2025-07-15",
+        "dni_paciente": "46003629",
+        "estado": "atendido",
+        "hora_recepcion": "16:43",
+        "hora_sala_espera": "16:44",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "15:25",
+        "fecha": "2025-07-22",
+        "dni_paciente": "22799771",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "15:00",
+        "fecha": "2025-07-23",
+        "dni_paciente": "27794158",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "15:45",
+        "fecha": "2025-07-23",
+        "dni_paciente": "27794158",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "17:15",
+        "fecha": "2025-07-25",
+        "dni_paciente": "47454940",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "17:10",
+        "fecha": "2025-07-25",
+        "dni_paciente": "53836445",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Juan Julian",
+        "hora": "17:55",
+        "fecha": "2025-07-25",
+        "dni_paciente": "47454940",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Juan Julian",
+        "hora": "17:50",
+        "fecha": "2025-07-25",
+        "dni_paciente": "53836445",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "15:25",
+        "fecha": "2025-07-23",
+        "dni_paciente": "37123683",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "16:15",
+        "fecha": "2025-07-23",
+        "dni_paciente": "37123683",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "17:00",
+        "fecha": "2025-07-18",
+        "dni_paciente": "55179163",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "17:05",
+        "fecha": "2025-07-18",
+        "dni_paciente": "37818601",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "15:15",
+        "fecha": "2025-07-23",
+        "dni_paciente": "42644602",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "16:05",
+        "fecha": "2025-07-23",
+        "dni_paciente": "42644602",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "17:10",
+        "fecha": "2025-07-18",
+        "dni_paciente": "38960522",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "16:55",
+        "fecha": "2025-07-18",
+        "dni_paciente": "29782145",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:15",
+        "fecha": "2025-07-15",
+        "dni_paciente": "41573753",
+        "estado": "atendido",
+        "hora_recepcion": "16:52",
+        "hora_sala_espera": "17:01",
+        "pago_registrado": true,
+        "monto_pagado": 23000.0
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "18:00",
+        "fecha": "2025-07-18",
+        "dni_paciente": "42886568",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "18:05",
+        "fecha": "2025-07-18",
+        "dni_paciente": "95719159",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "15:05",
+        "fecha": "2025-07-23",
+        "dni_paciente": "37695838",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "18:20",
+        "fecha": "2025-07-18",
+        "dni_paciente": "32724498",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "15:50",
+        "fecha": "2025-07-23",
+        "dni_paciente": "37695838",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "15:10",
+        "fecha": "2025-07-23",
+        "dni_paciente": "51160691",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "17:55",
+        "fecha": "2025-07-18",
+        "dni_paciente": "38180937",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "16:10",
+        "fecha": "2025-07-23",
+        "dni_paciente": "51160691",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "18:15",
+        "fecha": "2025-07-18",
+        "dni_paciente": "402108629",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "14:15",
+        "fecha": "2025-07-25",
+        "dni_paciente": "39233288",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "15:05",
+        "fecha": "2025-07-25",
+        "dni_paciente": "39233288",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "17:00",
+        "fecha": "2025-07-25",
+        "dni_paciente": "42114231",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "14:20",
+        "fecha": "2025-07-25",
+        "dni_paciente": "96186032",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "17:30",
+        "fecha": "2025-07-18",
+        "dni_paciente": "43240553",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "15:00",
+        "fecha": "2025-07-25",
+        "dni_paciente": "96186032",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "17:05",
+        "fecha": "2025-07-25",
+        "dni_paciente": "55179163",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "18:00",
+        "fecha": "2025-07-25",
+        "dni_paciente": "37915209",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "17:20",
+        "fecha": "2025-07-25",
+        "dni_paciente": "17202934",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "16:00",
+        "fecha": "2025-07-16",
+        "dni_paciente": "38518541",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "15:40",
+        "fecha": "2025-07-16",
+        "dni_paciente": "27270502",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Francisco Colom",
+        "hora": "15:45",
+        "fecha": "2025-07-16",
+        "dni_paciente": "26891974",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Julieta Colom",
+        "hora": "17:25",
+        "fecha": "2025-07-25",
+        "dni_paciente": "38680129",
+        "estado": "sin atender"
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "17:30",
+        "fecha": "2025-07-15",
+        "dni_paciente": "39487468",
+        "estado": "atendido",
+        "hora_recepcion": "17:36",
+        "hora_sala_espera": "17:36",
+        "pago_registrado": true,
+        "monto_pagado": 0.0
+    },
+    {
+        "medico": "Marianela Bobbiesi",
+        "hora": "16:15",
+        "fecha": "2025-07-15",
+        "dni_paciente": "0",
+        "estado": "sala de espera",
+        "hora_recepcion": "17:46",
+        "hora_sala_espera": "17:46",
+        "pago_registrado": true,
+        "monto_pagado": 11000.0
+    }
 ]

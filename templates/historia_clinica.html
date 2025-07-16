@@ -292,7 +292,12 @@
 
         let html = '';
         historiasPaciente.forEach(h => {
-          const fecha = h.fecha_consulta ? new Date(h.fecha_consulta).toLocaleDateString('es-ES') : 'Fecha no especificada';
+          let fecha = 'Fecha no especificada';
+          if (h.fecha_consulta) {
+            const [y, m, d] = h.fecha_consulta.split('-');
+            const fechaLocal = new Date(Number(y), Number(m)-1, Number(d), 12, 0, 0);
+            fecha = fechaLocal.toLocaleDateString('es-ES');
+          }
           html += `
             <div class="history-entry p-3 mb-3 rounded">
               <div class="d-flex justify-content-between align-items-start mb-2">
