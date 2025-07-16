@@ -5,7 +5,7 @@ import csv
 import io
 import shutil
 from functools import wraps
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timezone, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
@@ -1229,7 +1229,7 @@ def obtener_turnos_dia():
 @login_requerido
 @rol_requerido('secretaria')
 def limpiar_turnos_vencidos():
-    from datetime import datetime, timedelta
+    
     turnos = cargar_json(TURNOS_FILE)
     ahora = datetime.now()
     nuevos = []
@@ -1323,94 +1323,104 @@ def obtener_estadisticas_pagos_admin():
         "total_obra_social": total_obra_social
     })
 
+@app.route("/api/reportes/test", methods=["GET"])
+@login_requerido
+@rol_requerido("administrador")
+def test_reportes():
+    """Función de prueba para verificar autenticación"""
+    return jsonify({"message": "Reportes funcionando correctamente", "user": session.get("usuario"), "rol": session.get("rol")})
+
 @app.route("/api/reportes/turnos", methods=["GET"])
 @login_requerido
 @rol_requerido("administrador")
 def reporte_turnos():
     """Reporte completo de turnos por período"""
-    fecha_inicio = request.args.get("fecha_inicio")
-    fecha_fin = request.args.get("fecha_fin")
-    medico = request.args.get("medico", "")
-    
-    if not fecha_inicio or not fecha_fin:
-        # Por defecto, último mes
-        hoy = datetime.now()
-        fecha_fin = hoy.strftime("%Y-%m-%d")
-        fecha_inicio = (hoy.replace(day=1) - timedelta(days=1)).replace(day=1).strftime("%Y-%m-%d")
-    
-    turnos = cargar_json(TURNOS_FILE)
-    pacientes = cargar_json(PACIENTES_FILE)
-    
-    # Filtrar turnos por período y médico
-    turnos_filtrados = []
-    for turno in turnos:
-        fecha_turno = turno.get("fecha", "")
-        if fecha_inicio <= fecha_turno <= fecha_fin:
-            if not medico or turno.get("medico") == medico:
-                turnos_filtrados.append(turno)
-    
-    # Estadísticas generales
-    total_turnos = len(turnos_filtrados)
-    turnos_atendidos = len([t for t in turnos_filtrados if t.get("estado") == "atendido"])
-    turnos_ausentes = len([t for t in turnos_filtrados if t.get("estado") == "ausente"])
-    turnos_pendientes = len([t for t in turnos_filtrados if t.get("estado") in ["confirmado", "llamado", "recepcionado"]])
-    
-    # Estadísticas por médico
-    stats_por_medico = {}
-    for turno in turnos_filtrados:
-        medico_nombre = turno.get("medico", "Sin asignar")
-        if medico_nombre not in stats_por_medico:
-            stats_por_medico[medico_nombre] = {
-                "total": 0,
-                "atendidos": 0,
-                "ausentes": 0,
-                "pendientes": 0
-            }
+    try:
+        fecha_inicio = request.args.get("fecha_inicio")
+        fecha_fin = request.args.get("fecha_fin")
+        medico = request.args.get("medico", "")
         
-        stats_por_medico[medico_nombre]["total"] += 1
-        estado = turno.get("estado", "confirmado")
-        if estado == "atendido":
-            stats_por_medico[medico_nombre]["atendidos"] += 1
-        elif estado == "ausente":
-            stats_por_medico[medico_nombre]["ausentes"] += 1
-        else:
-            stats_por_medico[medico_nombre]["pendientes"] += 1
-    
-    # Estadísticas por día
-    stats_por_dia = {}
-    for turno in turnos_filtrados:
-        fecha = turno.get("fecha", "")
-        if fecha not in stats_por_dia:
-            stats_por_dia[fecha] = {
-                "total": 0,
-                "atendidos": 0,
-                "ausentes": 0,
-                "pendientes": 0
-            }
+        if not fecha_inicio or not fecha_fin:
+            # Por defecto, último mes
+            hoy = datetime.now()
+            fecha_fin = hoy.strftime("%Y-%m-%d")
+            fecha_inicio = (hoy.replace(day=1) - timedelta(days=1)).replace(day=1).strftime("%Y-%m-%d")
         
-        stats_por_dia[fecha]["total"] += 1
-        estado = turno.get("estado", "confirmado")
-        if estado == "atendido":
-            stats_por_dia[fecha]["atendidos"] += 1
-        elif estado == "ausente":
-            stats_por_dia[fecha]["ausentes"] += 1
-        else:
-            stats_por_dia[fecha]["pendientes"] += 1
+        turnos = cargar_json(TURNOS_FILE)
+        pacientes = cargar_json(PACIENTES_FILE)
+        
+        # Filtrar turnos por período y médico
+        turnos_filtrados = []
+        for turno in turnos:
+            fecha_turno = turno.get("fecha", "")
+            if fecha_inicio <= fecha_turno <= fecha_fin:
+                if not medico or turno.get("medico") == medico:
+                    turnos_filtrados.append(turno)
     
-    return jsonify({
-        "total_turnos": total_turnos,
-        "turnos_atendidos": turnos_atendidos,
-        "turnos_ausentes": turnos_ausentes,
-        "turnos_pendientes": turnos_pendientes,
-        "porcentaje_atencion": round((turnos_atendidos / total_turnos * 100) if total_turnos > 0 else 0, 2),
-        "porcentaje_ausencias": round((turnos_ausentes / total_turnos * 100) if total_turnos > 0 else 0, 2),
-        "stats_por_medico": stats_por_medico,
-        "stats_por_dia": stats_por_dia,
-        "periodo": {
-            "inicio": fecha_inicio,
-            "fin": fecha_fin
-        }
-    })
+        # Estadísticas generales
+        total_turnos = len(turnos_filtrados)
+        turnos_atendidos = len([t for t in turnos_filtrados if t.get("estado") == "atendido"])
+        turnos_ausentes = len([t for t in turnos_filtrados if t.get("estado") == "ausente"])
+        turnos_pendientes = len([t for t in turnos_filtrados if t.get("estado") in ["confirmado", "llamado", "recepcionado"]])
+        
+        # Estadísticas por médico
+        stats_por_medico = {}
+        for turno in turnos_filtrados:
+            medico_nombre = turno.get("medico", "Sin asignar")
+            if medico_nombre not in stats_por_medico:
+                stats_por_medico[medico_nombre] = {
+                    "total": 0,
+                    "atendidos": 0,
+                    "ausentes": 0,
+                    "pendientes": 0
+                }
+            
+            stats_por_medico[medico_nombre]["total"] += 1
+            estado = turno.get("estado", "confirmado")
+            if estado == "atendido":
+                stats_por_medico[medico_nombre]["atendidos"] += 1
+            elif estado == "ausente":
+                stats_por_medico[medico_nombre]["ausentes"] += 1
+            else:
+                stats_por_medico[medico_nombre]["pendientes"] += 1
+        
+        # Estadísticas por día
+        stats_por_dia = {}
+        for turno in turnos_filtrados:
+            fecha = turno.get("fecha", "")
+            if fecha not in stats_por_dia:
+                stats_por_dia[fecha] = {
+                    "total": 0,
+                    "atendidos": 0,
+                    "ausentes": 0,
+                    "pendientes": 0
+                }
+            
+            stats_por_dia[fecha]["total"] += 1
+            estado = turno.get("estado", "confirmado")
+            if estado == "atendido":
+                stats_por_dia[fecha]["atendidos"] += 1
+            elif estado == "ausente":
+                stats_por_dia[fecha]["ausentes"] += 1
+            else:
+                stats_por_dia[fecha]["pendientes"] += 1
+    
+        return jsonify({
+            "total_turnos": total_turnos,
+            "turnos_atendidos": turnos_atendidos,
+            "turnos_ausentes": turnos_ausentes,
+            "turnos_pendientes": turnos_pendientes,
+            "porcentaje_atencion": round((turnos_atendidos / total_turnos * 100) if total_turnos > 0 else 0, 2),
+            "porcentaje_ausencias": round((turnos_ausentes / total_turnos * 100) if total_turnos > 0 else 0, 2),
+            "stats_por_medico": stats_por_medico,
+            "stats_por_dia": stats_por_dia,
+            "periodo": {
+                "inicio": fecha_inicio,
+                "fin": fecha_fin
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": f"Error en reporte de turnos: {str(e)}"}), 500
 
 
 @app.route("/api/reportes/pacientes", methods=["GET"])
@@ -1418,73 +1428,76 @@ def reporte_turnos():
 @rol_requerido("administrador")
 def reporte_pacientes():
     """Reporte completo de pacientes"""
-    pacientes = cargar_json(PACIENTES_FILE)
-    turnos = cargar_json(TURNOS_FILE)
-    
-    total_pacientes = len(pacientes)
-    
-    # Análisis por obra social
-    obras_sociales = {}
-    edades = []
-    
-    for paciente in pacientes:
-        obra_social = paciente.get("obra_social", "Sin especificar")
-        if obra_social not in obras_sociales:
-            obras_sociales[obra_social] = 0
-        obras_sociales[obra_social] += 1
+    try:
+        pacientes = cargar_json(PACIENTES_FILE)
+        turnos = cargar_json(TURNOS_FILE)
         
-        # Calcular edad si está disponible
-        edad = paciente.get("edad")
-        if edad and str(edad).isdigit():
-            edades.append(int(edad))
+        total_pacientes = len(pacientes)
+        
+        # Análisis por obra social
+        obras_sociales = {}
+        edades = []
+        
+        for paciente in pacientes:
+            obra_social = paciente.get("obra_social", "Sin especificar")
+            if obra_social not in obras_sociales:
+                obras_sociales[obra_social] = 0
+            obras_sociales[obra_social] += 1
+            
+            # Calcular edad si está disponible
+            edad = paciente.get("edad")
+            if edad and str(edad).isdigit():
+                edades.append(int(edad))
     
-    # Estadísticas de edad
-    promedio_edad = round(sum(edades) / len(edades), 1) if edades else 0
-    edad_min = min(edades) if edades else 0
-    edad_max = max(edades) if edades else 0
+        # Estadísticas de edad
+        promedio_edad = round(sum(edades) / len(edades), 1) if edades else 0
+        edad_min = min(edades) if edades else 0
+        edad_max = max(edades) if edades else 0
+        
+        # Rangos de edad
+        rangos_edad = {
+            "0-18": len([e for e in edades if e <= 18]),
+            "19-30": len([e for e in edades if 19 <= e <= 30]),
+            "31-50": len([e for e in edades if 31 <= e <= 50]),
+            "51-70": len([e for e in edades if 51 <= e <= 70]),
+            "70+": len([e for e in edades if e > 70])
+        }
     
-    # Rangos de edad
-    rangos_edad = {
-        "0-18": len([e for e in edades if e <= 18]),
-        "19-30": len([e for e in edades if 19 <= e <= 30]),
-        "31-50": len([e for e in edades if 31 <= e <= 50]),
-        "51-70": len([e for e in edades if 51 <= e <= 70]),
-        "70+": len([e for e in edades if e > 70])
-    }
+        # Pacientes más activos (con más turnos)
+        turnos_por_paciente = {}
+        for turno in turnos:
+            dni = turno.get("dni_paciente")
+            if dni not in turnos_por_paciente:
+                turnos_por_paciente[dni] = 0
+            turnos_por_paciente[dni] += 1
+        
+        pacientes_activos = []
+        for paciente in pacientes:
+            dni = paciente.get("dni")
+            cantidad_turnos = turnos_por_paciente.get(dni, 0)
+            if cantidad_turnos > 0:
+                pacientes_activos.append({
+                    "nombre": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
+                    "dni": dni,
+                    "turnos": cantidad_turnos
+                })
+        
+        pacientes_activos.sort(key=lambda x: x["turnos"], reverse=True)
     
-    # Pacientes más activos (con más turnos)
-    turnos_por_paciente = {}
-    for turno in turnos:
-        dni = turno.get("dni_paciente")
-        if dni not in turnos_por_paciente:
-            turnos_por_paciente[dni] = 0
-        turnos_por_paciente[dni] += 1
-    
-    pacientes_activos = []
-    for paciente in pacientes:
-        dni = paciente.get("dni")
-        cantidad_turnos = turnos_por_paciente.get(dni, 0)
-        if cantidad_turnos > 0:
-            pacientes_activos.append({
-                "nombre": f"{paciente.get('nombre', '')} {paciente.get('apellido', '')}".strip(),
-                "dni": dni,
-                "turnos": cantidad_turnos
-            })
-    
-    pacientes_activos.sort(key=lambda x: x["turnos"], reverse=True)
-    
-    return jsonify({
-        "total_pacientes": total_pacientes,
-        "obras_sociales": obras_sociales,
-        "estadisticas_edad": {
-            "promedio": promedio_edad,
-            "minima": edad_min,
-            "maxima": edad_max,
-            "rangos": rangos_edad
-        },
-        "pacientes_activos": pacientes_activos[:10],  # Top 10
-        "pacientes_sin_turnos": total_pacientes - len([p for p in pacientes if p.get("dni") in turnos_por_paciente])
-    })
+        return jsonify({
+            "total_pacientes": total_pacientes,
+            "obras_sociales": obras_sociales,
+            "estadisticas_edad": {
+                "promedio": promedio_edad,
+                "minima": edad_min,
+                "maxima": edad_max,
+                "rangos": rangos_edad
+            },
+            "pacientes_activos": pacientes_activos[:10],  # Top 10
+            "pacientes_sin_turnos": total_pacientes - len([p for p in pacientes if p.get("dni") in turnos_por_paciente])
+        })
+    except Exception as e:
+        return jsonify({"error": f"Error en reporte de pacientes: {str(e)}"}), 500
 
 
 @app.route("/api/reportes/ocupacion", methods=["GET"])
@@ -1492,94 +1505,97 @@ def reporte_pacientes():
 @rol_requerido("administrador")
 def reporte_ocupacion():
     """Reporte de ocupación de agenda"""
-    fecha_inicio = request.args.get("fecha_inicio")
-    fecha_fin = request.args.get("fecha_fin")
-    
-    if not fecha_inicio or not fecha_fin:
-        # Por defecto, última semana
-        hoy = datetime.now()
-        fecha_fin = hoy.strftime("%Y-%m-%d")
-        fecha_inicio = (hoy - timedelta(days=7)).strftime("%Y-%m-%d")
-    
-    agenda = cargar_json(AGENDA_FILE)
-    turnos = cargar_json(TURNOS_FILE)
-    
-    # Filtrar turnos por período
-    turnos_periodo = [t for t in turnos if fecha_inicio <= t.get("fecha", "") <= fecha_fin]
-    
-    ocupacion_por_medico = {}
-    ocupacion_por_dia = {}
-    
-    # Calcular ocupación por cada día en el rango
-    fecha_actual = datetime.strptime(fecha_inicio, "%Y-%m-%d")
-    fecha_final = datetime.strptime(fecha_fin, "%Y-%m-%d")
-    
-    while fecha_actual <= fecha_final:
-        fecha_str = fecha_actual.strftime("%Y-%m-%d")
-        dia_semana = fecha_actual.strftime("%A").upper()
+    try:
+        fecha_inicio = request.args.get("fecha_inicio")
+        fecha_fin = request.args.get("fecha_fin")
         
-        # Mapear días al español
-        dias_map = {
-            "MONDAY": "LUNES",
-            "TUESDAY": "MARTES", 
-            "WEDNESDAY": "MIERCOLES",
-            "THURSDAY": "JUEVES",
-            "FRIDAY": "VIERNES",
-            "SATURDAY": "SABADO",
-            "SUNDAY": "DOMINGO"
-        }
-        dia_semana = dias_map.get(dia_semana, dia_semana)
+        if not fecha_inicio or not fecha_fin:
+            # Por defecto, última semana
+            hoy = datetime.now()
+            fecha_fin = hoy.strftime("%Y-%m-%d")
+            fecha_inicio = (hoy - timedelta(days=7)).strftime("%Y-%m-%d")
         
-        # Calcular slots disponibles y ocupados para este día
-        slots_disponibles = 0
-        slots_ocupados = len([t for t in turnos_periodo if t.get("fecha") == fecha_str])
+        agenda = cargar_json(AGENDA_FILE)
+        turnos = cargar_json(TURNOS_FILE)
         
-        for medico, horarios in agenda.items():
-            if dia_semana in horarios:
-                slots_disponibles += len(horarios[dia_semana])
-                
-                # Estadísticas por médico
-                if medico not in ocupacion_por_medico:
-                    ocupacion_por_medico[medico] = {
-                        "slots_disponibles": 0,
-                        "slots_ocupados": 0
-                    }
-                
-                ocupacion_por_medico[medico]["slots_disponibles"] += len(horarios[dia_semana])
-                slots_medico_ocupados = len([t for t in turnos_periodo if t.get("fecha") == fecha_str and t.get("medico") == medico])
-                ocupacion_por_medico[medico]["slots_ocupados"] += slots_medico_ocupados
+        # Filtrar turnos por período
+        turnos_periodo = [t for t in turnos if fecha_inicio <= t.get("fecha", "") <= fecha_fin]
         
-        # Estadísticas por día
-        ocupacion_por_dia[fecha_str] = {
-            "slots_disponibles": slots_disponibles,
-            "slots_ocupados": slots_ocupados,
-            "porcentaje_ocupacion": round((slots_ocupados / slots_disponibles * 100) if slots_disponibles > 0 else 0, 2)
-        }
-        
-        fecha_actual += timedelta(days=1)
+        ocupacion_por_medico = {}
+        ocupacion_por_dia = {}
     
-    # Calcular porcentajes para médicos
-    for medico in ocupacion_por_medico:
-        disponibles = ocupacion_por_medico[medico]["slots_disponibles"]
-        ocupados = ocupacion_por_medico[medico]["slots_ocupados"]
-        ocupacion_por_medico[medico]["porcentaje_ocupacion"] = round((ocupados / disponibles * 100) if disponibles > 0 else 0, 2)
+        # Calcular ocupación por cada día en el rango
+        fecha_actual = datetime.strptime(fecha_inicio, "%Y-%m-%d")
+        fecha_final = datetime.strptime(fecha_fin, "%Y-%m-%d")
+        
+        while fecha_actual <= fecha_final:
+            fecha_str = fecha_actual.strftime("%Y-%m-%d")
+            dia_semana = fecha_actual.strftime("%A").upper()
+            
+            # Mapear días al español
+            dias_map = {
+                "MONDAY": "LUNES",
+                "TUESDAY": "MARTES", 
+                "WEDNESDAY": "MIERCOLES",
+                "THURSDAY": "JUEVES",
+                "FRIDAY": "VIERNES",
+                "SATURDAY": "SABADO",
+                "SUNDAY": "DOMINGO"
+            }
+            dia_semana = dias_map.get(dia_semana, dia_semana)
+            
+            # Calcular slots disponibles y ocupados para este día
+            slots_disponibles = 0
+            slots_ocupados = len([t for t in turnos_periodo if t.get("fecha") == fecha_str])
+            
+            for medico, horarios in agenda.items():
+                if dia_semana in horarios:
+                    slots_disponibles += len(horarios[dia_semana])
+                    
+                    # Estadísticas por médico
+                    if medico not in ocupacion_por_medico:
+                        ocupacion_por_medico[medico] = {
+                            "slots_disponibles": 0,
+                            "slots_ocupados": 0
+                        }
+                    
+                    ocupacion_por_medico[medico]["slots_disponibles"] += len(horarios[dia_semana])
+                    slots_medico_ocupados = len([t for t in turnos_periodo if t.get("fecha") == fecha_str and t.get("medico") == medico])
+                    ocupacion_por_medico[medico]["slots_ocupados"] += slots_medico_ocupados
+            
+            # Estadísticas por día
+            ocupacion_por_dia[fecha_str] = {
+                "slots_disponibles": slots_disponibles,
+                "slots_ocupados": slots_ocupados,
+                "porcentaje_ocupacion": round((slots_ocupados / slots_disponibles * 100) if slots_disponibles > 0 else 0, 2)
+            }
+            
+            fecha_actual += timedelta(days=1)
     
-    # Estadísticas generales
-    total_disponibles = sum(dia["slots_disponibles"] for dia in ocupacion_por_dia.values())
-    total_ocupados = sum(dia["slots_ocupados"] for dia in ocupacion_por_dia.values())
-    ocupacion_promedio = round((total_ocupados / total_disponibles * 100) if total_disponibles > 0 else 0, 2)
+        # Calcular porcentajes para médicos
+        for medico in ocupacion_por_medico:
+            disponibles = ocupacion_por_medico[medico]["slots_disponibles"]
+            ocupados = ocupacion_por_medico[medico]["slots_ocupados"]
+            ocupacion_por_medico[medico]["porcentaje_ocupacion"] = round((ocupados / disponibles * 100) if disponibles > 0 else 0, 2)
+        
+        # Estadísticas generales
+        total_disponibles = sum(dia["slots_disponibles"] for dia in ocupacion_por_dia.values())
+        total_ocupados = sum(dia["slots_ocupados"] for dia in ocupacion_por_dia.values())
+        ocupacion_promedio = round((total_ocupados / total_disponibles * 100) if total_disponibles > 0 else 0, 2)
     
-    return jsonify({
-        "ocupacion_promedio": ocupacion_promedio,
-        "total_slots_disponibles": total_disponibles,
-        "total_slots_ocupados": total_ocupados,
-        "ocupacion_por_medico": ocupacion_por_medico,
-        "ocupacion_por_dia": ocupacion_por_dia,
-        "periodo": {
-            "inicio": fecha_inicio,
-            "fin": fecha_fin
-        }
-    })
+        return jsonify({
+            "ocupacion_promedio": ocupacion_promedio,
+            "total_slots_disponibles": total_disponibles,
+            "total_slots_ocupados": total_ocupados,
+            "ocupacion_por_medico": ocupacion_por_medico,
+            "ocupacion_por_dia": ocupacion_por_dia,
+            "periodo": {
+                "inicio": fecha_inicio,
+                "fin": fecha_fin
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": f"Error en reporte de ocupación: {str(e)}"}), 500
 
 
 @app.route("/api/pagos/exportar-admin", methods=["GET"])
@@ -1587,7 +1603,6 @@ def reporte_ocupacion():
 @rol_requerido("administrador")
 def exportar_pagos_csv_admin():
     """Exportar pagos a CSV para administradores"""
-    from datetime import datetime
     pagos = cargar_json(PAGOS_FILE)
     pacientes = cargar_json(PACIENTES_FILE)
     

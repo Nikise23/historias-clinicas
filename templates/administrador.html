@@ -586,6 +586,9 @@
                             <button class="btn btn-primary btn-lg" onclick="generarReportePersonalizado()">
                                 <i class="bi bi-download"></i> Generar Reporte Personalizado
                             </button>
+                            <button class="btn btn-info btn-sm ms-3" onclick="probarConectividad()">
+                                <i class="bi bi-wifi"></i> Probar Conectividad
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -972,11 +975,46 @@
             alert(`Exportando reporte de ${tipo} del ${fechaInicio} al ${fechaFin}`);
         }
 
+        // Función de prueba para verificar conectividad
+        async function probarConectividad() {
+            try {
+                console.log('Probando conectividad...');
+                const response = await fetch('/api/reportes/test');
+                console.log('Test Response status:', response.status);
+                
+                const responseText = await response.text();
+                console.log('Test Response text:', responseText);
+                
+                if (response.ok) {
+                    const data = JSON.parse(responseText);
+                    alert(`Conectividad OK: ${data.message}\nUsuario: ${data.user}\nRol: ${data.rol}`);
+                } else {
+                    alert('Error de conectividad: ' + response.status);
+                }
+            } catch (error) {
+                console.error('Error en prueba de conectividad:', error);
+                alert('Error de conectividad: ' + error.message);
+            }
+        }
+
         // Función para mostrar reporte de pacientes
         async function mostrarReportePacientes() {
             try {
+                console.log('Intentando obtener reporte de pacientes...');
                 const response = await fetch('/api/reportes/pacientes');
-                const data = await response.json();
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('Error parsing JSON:', parseError);
+                    throw new Error('La respuesta del servidor no es JSON válido. Revise la consola para más detalles.');
+                }
                 
                 if (!response.ok) {
                     throw new Error(data.error || 'Error al obtener el reporte');
