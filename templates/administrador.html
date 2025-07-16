@@ -493,6 +493,103 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Reportes Adicionales -->
+            <div class="report-section">
+                <h2 class="section-title">
+                    <i class="bi bi-graph-up"></i>
+                    Reportes Avanzados
+                </h2>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
+                                <h5 class="card-title mt-3">Reporte de Pacientes</h5>
+                                <p class="card-text">Análisis demográfico y estadísticas de pacientes registrados</p>
+                                <button class="btn btn-primary" onclick="mostrarReportePacientes()">
+                                    <i class="bi bi-eye"></i> Ver Reporte
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-calendar2-check text-success" style="font-size: 2rem;"></i>
+                                <h5 class="card-title mt-3">Ocupación de Agenda</h5>
+                                <p class="card-text">Análisis de ocupación y disponibilidad por médico</p>
+                                <button class="btn btn-success" onclick="mostrarReporteOcupacion()">
+                                    <i class="bi bi-eye"></i> Ver Reporte
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-bar-chart-line text-warning" style="font-size: 2rem;"></i>
+                                <h5 class="card-title mt-3">Dashboard Ejecutivo</h5>
+                                <p class="card-text">Resumen ejecutivo con métricas clave del consultorio</p>
+                                <button class="btn btn-warning" onclick="mostrarDashboardEjecutivo()">
+                                    <i class="bi bi-eye"></i> Ver Dashboard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reportes Personalizados -->
+            <div class="report-section">
+                <h2 class="section-title">
+                    <i class="bi bi-gear"></i>
+                    Reportes Personalizados
+                </h2>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fecha-inicio-custom" class="form-label">Fecha Inicio</label>
+                                    <input type="date" class="form-control" id="fecha-inicio-custom">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fecha-fin-custom" class="form-label">Fecha Fin</label>
+                                    <input type="date" class="form-control" id="fecha-fin-custom">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="medico-filtro" class="form-label">Filtrar por Médico (Opcional)</label>
+                                    <select class="form-select" id="medico-filtro">
+                                        <option value="">Todos los médicos</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="tipo-reporte" class="form-label">Tipo de Reporte</label>
+                                    <select class="form-select" id="tipo-reporte">
+                                        <option value="turnos">Turnos</option>
+                                        <option value="ocupacion">Ocupación</option>
+                                        <option value="pacientes">Pacientes</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button class="btn btn-primary btn-lg" onclick="generarReportePersonalizado()">
+                                <i class="bi bi-download"></i> Generar Reporte Personalizado
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -506,7 +603,35 @@
             const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
             document.getElementById('mes-selector').value = mesActual;
             cargarIngresosMes();
+            cargarMedicosParaFiltros();
+            
+            // Configurar fechas por defecto para reportes personalizados
+            const fechaHoy = hoy.toISOString().split('T')[0];
+            const fechaInicioMes = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-01`;
+            document.getElementById('fecha-inicio-custom').value = fechaInicioMes;
+            document.getElementById('fecha-fin-custom').value = fechaHoy;
         });
+
+        // Cargar lista de médicos para filtros
+        async function cargarMedicosParaFiltros() {
+            try {
+                const response = await fetch('/api/agenda');
+                const agenda = await response.json();
+                
+                const medicoSelect = document.getElementById('medico-filtro');
+                medicoSelect.innerHTML = '<option value="">Todos los médicos</option>';
+                
+                Object.keys(agenda).forEach(medico => {
+                    const option = document.createElement('option');
+                    option.value = medico;
+                    option.textContent = medico;
+                    medicoSelect.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('Error al cargar médicos:', error);
+            }
+        }
 
         async function cargarInfoUsuario() {
             try {
@@ -678,21 +803,626 @@
             }
         }
 
-        // Funciones para reportes adicionales (placeholder)
-        function generarReporteAnual() {
-            alert('Función de reporte anual en desarrollo');
+        // Funciones para reportes adicionales
+        async function generarReporteAnual() {
+            const year = new Date().getFullYear();
+            const fechaInicio = `${year}-01-01`;
+            const fechaFin = `${year}-12-31`;
+            await mostrarReporteTurnos(fechaInicio, fechaFin, `Reporte Anual ${year}`);
         }
 
-        function generarReporteMensual() {
-            alert('Función de reporte mensual en desarrollo');
+        async function generarReporteMensual() {
+            const hoy = new Date();
+            const year = hoy.getFullYear();
+            const month = (hoy.getMonth() + 1).toString().padStart(2, '0');
+            const fechaInicio = `${year}-${month}-01`;
+            const ultimoDia = new Date(year, hoy.getMonth() + 1, 0).getDate();
+            const fechaFin = `${year}-${month}-${ultimoDia.toString().padStart(2, '0')}`;
+            await mostrarReporteTurnos(fechaInicio, fechaFin, `Reporte Mensual ${month}/${year}`);
         }
 
-        function generarReporteSemanal() {
-            alert('Función de reporte semanal en desarrollo');
+        async function generarReporteSemanal() {
+            const hoy = new Date();
+            const inicioSemana = new Date(hoy);
+            inicioSemana.setDate(hoy.getDate() - hoy.getDay() + 1); // Lunes
+            const finSemana = new Date(inicioSemana);
+            finSemana.setDate(inicioSemana.getDate() + 6); // Domingo
+            
+            const fechaInicio = inicioSemana.toISOString().split('T')[0];
+            const fechaFin = finSemana.toISOString().split('T')[0];
+            await mostrarReporteTurnos(fechaInicio, fechaFin, 'Reporte Semanal');
         }
 
-        function generarReporteDiario() {
-            alert('Función de reporte diario en desarrollo');
+        async function generarReporteDiario() {
+            const hoy = new Date().toISOString().split('T')[0];
+            await mostrarReporteTurnos(hoy, hoy, 'Reporte Diario');
+        }
+
+        // Función para mostrar reportes de turnos
+        async function mostrarReporteTurnos(fechaInicio, fechaFin, titulo) {
+            try {
+                const response = await fetch(`/api/reportes/turnos?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error al obtener el reporte');
+                }
+
+                // Crear modal para mostrar el reporte
+                const modalContent = `
+                    <div class="modal fade" id="reporteModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-xl">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">${titulo}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row mb-4">
+                                        <div class="col-md-3">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Total Turnos</h6>
+                                                <h3 class="text-primary">${data.total_turnos}</h3>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Atendidos</h6>
+                                                <h3 class="text-success">${data.turnos_atendidos}</h3>
+                                                <small>${data.porcentaje_atencion}%</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Ausentes</h6>
+                                                <h3 class="text-danger">${data.turnos_ausentes}</h3>
+                                                <small>${data.porcentaje_ausencias}%</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Pendientes</h6>
+                                                <h3 class="text-warning">${data.turnos_pendientes}</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Estadísticas por Médico</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Médico</th>
+                                                            <th>Total</th>
+                                                            <th>Atendidos</th>
+                                                            <th>Ausentes</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${Object.entries(data.stats_por_medico).map(([medico, stats]) => `
+                                                            <tr>
+                                                                <td>${medico}</td>
+                                                                <td>${stats.total}</td>
+                                                                <td class="text-success">${stats.atendidos}</td>
+                                                                <td class="text-danger">${stats.ausentes}</td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Tendencia por Día</h6>
+                                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Total</th>
+                                                            <th>Atendidos</th>
+                                                            <th>Ausentes</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${Object.entries(data.stats_por_dia).sort().map(([fecha, stats]) => `
+                                                            <tr>
+                                                                <td>${fecha}</td>
+                                                                <td>${stats.total}</td>
+                                                                <td class="text-success">${stats.atendidos}</td>
+                                                                <td class="text-danger">${stats.ausentes}</td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                    <button type="button" class="btn btn-primary" onclick="exportarReporte('turnos', '${fechaInicio}', '${fechaFin}')">Exportar PDF</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Remover modal existente si hay uno
+                const existingModal = document.getElementById('reporteModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+
+                // Agregar nuevo modal
+                document.body.insertAdjacentHTML('beforeend', modalContent);
+                
+                // Mostrar modal
+                const modal = new bootstrap.Modal(document.getElementById('reporteModal'));
+                modal.show();
+
+            } catch (error) {
+                alert('Error al generar reporte: ' + error.message);
+            }
+        }
+
+        // Función para exportar reporte (placeholder)
+        function exportarReporte(tipo, fechaInicio, fechaFin) {
+            alert(`Exportando reporte de ${tipo} del ${fechaInicio} al ${fechaFin}`);
+        }
+
+        // Función para mostrar reporte de pacientes
+        async function mostrarReportePacientes() {
+            try {
+                const response = await fetch('/api/reportes/pacientes');
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error al obtener el reporte');
+                }
+
+                const modalContent = `
+                    <div class="modal fade" id="reportePacientesModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-xl">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Reporte de Pacientes</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row mb-4">
+                                        <div class="col-md-3">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Total Pacientes</h6>
+                                                <h3 class="text-primary">${data.total_pacientes}</h3>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Edad Promedio</h6>
+                                                <h3 class="text-info">${data.estadisticas_edad.promedio} años</h3>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Pacientes Activos</h6>
+                                                <h3 class="text-success">${data.total_pacientes - data.pacientes_sin_turnos}</h3>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Sin Turnos</h6>
+                                                <h3 class="text-warning">${data.pacientes_sin_turnos}</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Distribución por Obra Social</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Obra Social</th>
+                                                            <th>Cantidad</th>
+                                                            <th>%</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${Object.entries(data.obras_sociales).sort((a,b) => b[1] - a[1]).map(([obra, cantidad]) => `
+                                                            <tr>
+                                                                <td>${obra}</td>
+                                                                <td>${cantidad}</td>
+                                                                <td>${Math.round((cantidad / data.total_pacientes) * 100)}%</td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Distribución por Edad</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Rango</th>
+                                                            <th>Cantidad</th>
+                                                            <th>%</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${Object.entries(data.estadisticas_edad.rangos).map(([rango, cantidad]) => `
+                                                            <tr>
+                                                                <td>${rango} años</td>
+                                                                <td>${cantidad}</td>
+                                                                <td>${Math.round((cantidad / data.total_pacientes) * 100)}%</td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            
+                                            <h6 class="mt-3">Pacientes Más Activos</h6>
+                                            <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Paciente</th>
+                                                            <th>Turnos</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${data.pacientes_activos.map(paciente => `
+                                                            <tr>
+                                                                <td>${paciente.nombre}</td>
+                                                                <td class="text-primary">${paciente.turnos}</td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                    <button type="button" class="btn btn-primary" onclick="exportarReporte('pacientes', '', '')">Exportar PDF</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                const existingModal = document.getElementById('reportePacientesModal');
+                if (existingModal) existingModal.remove();
+
+                document.body.insertAdjacentHTML('beforeend', modalContent);
+                const modal = new bootstrap.Modal(document.getElementById('reportePacientesModal'));
+                modal.show();
+
+            } catch (error) {
+                alert('Error al generar reporte de pacientes: ' + error.message);
+            }
+        }
+
+        // Función para mostrar reporte de ocupación
+        async function mostrarReporteOcupacion() {
+            try {
+                const hoy = new Date();
+                const fechaFin = hoy.toISOString().split('T')[0];
+                const fechaInicio = new Date(hoy.getTime() - (7 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+                
+                const response = await fetch(`/api/reportes/ocupacion?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error al obtener el reporte');
+                }
+
+                const modalContent = `
+                    <div class="modal fade" id="reporteOcupacionModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-xl">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Reporte de Ocupación de Agenda</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row mb-4">
+                                        <div class="col-md-4">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Ocupación Promedio</h6>
+                                                <h3 class="text-primary">${data.ocupacion_promedio}%</h3>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Slots Disponibles</h6>
+                                                <h3 class="text-info">${data.total_slots_disponibles}</h3>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Slots Ocupados</h6>
+                                                <h3 class="text-success">${data.total_slots_ocupados}</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Ocupación por Médico</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Médico</th>
+                                                            <th>Disponibles</th>
+                                                            <th>Ocupados</th>
+                                                            <th>%</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${Object.entries(data.ocupacion_por_medico).map(([medico, stats]) => `
+                                                            <tr>
+                                                                <td>${medico}</td>
+                                                                <td>${stats.slots_disponibles}</td>
+                                                                <td class="text-success">${stats.slots_ocupados}</td>
+                                                                <td><span class="badge ${stats.porcentaje_ocupacion > 80 ? 'bg-success' : stats.porcentaje_ocupacion > 50 ? 'bg-warning' : 'bg-secondary'}">${stats.porcentaje_ocupacion}%</span></td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Ocupación por Día</h6>
+                                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Disponibles</th>
+                                                            <th>Ocupados</th>
+                                                            <th>%</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${Object.entries(data.ocupacion_por_dia).sort().reverse().map(([fecha, stats]) => `
+                                                            <tr>
+                                                                <td>${fecha}</td>
+                                                                <td>${stats.slots_disponibles}</td>
+                                                                <td class="text-success">${stats.slots_ocupados}</td>
+                                                                <td><span class="badge ${stats.porcentaje_ocupacion > 80 ? 'bg-success' : stats.porcentaje_ocupacion > 50 ? 'bg-warning' : 'bg-secondary'}">${stats.porcentaje_ocupacion}%</span></td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                    <button type="button" class="btn btn-primary" onclick="exportarReporte('ocupacion', '${fechaInicio}', '${fechaFin}')">Exportar PDF</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                const existingModal = document.getElementById('reporteOcupacionModal');
+                if (existingModal) existingModal.remove();
+
+                document.body.insertAdjacentHTML('beforeend', modalContent);
+                const modal = new bootstrap.Modal(document.getElementById('reporteOcupacionModal'));
+                modal.show();
+
+            } catch (error) {
+                alert('Error al generar reporte de ocupación: ' + error.message);
+            }
+        }
+
+        // Función para mostrar dashboard ejecutivo
+        async function mostrarDashboardEjecutivo() {
+            try {
+                // Obtener datos de múltiples reportes
+                const [turnosResponse, pacientesResponse, ocupacionResponse, pagosResponse] = await Promise.all([
+                    fetch('/api/reportes/turnos'),
+                    fetch('/api/reportes/pacientes'),
+                    fetch('/api/reportes/ocupacion'),
+                    fetch('/api/pagos/estadisticas-admin')
+                ]);
+
+                const [turnosData, pacientesData, ocupacionData, pagosData] = await Promise.all([
+                    turnosResponse.json(),
+                    pacientesResponse.json(),
+                    ocupacionResponse.json(),
+                    pagosResponse.json()
+                ]);
+
+                const modalContent = `
+                    <div class="modal fade" id="dashboardEjecutivoModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-xl">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Dashboard Ejecutivo</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row mb-4">
+                                        <div class="col-md-3">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Pacientes Registrados</h6>
+                                                <h3 class="text-primary">${pacientesData.total_pacientes}</h3>
+                                                <small>Total en el sistema</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Turnos del Mes</h6>
+                                                <h3 class="text-success">${turnosData.total_turnos}</h3>
+                                                <small>${turnosData.porcentaje_atencion}% atendidos</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Ocupación Promedio</h6>
+                                                <h3 class="text-info">${ocupacionData.ocupacion_promedio}%</h3>
+                                                <small>Última semana</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-card">
+                                                <h6 class="text-muted">Ingresos del Mes</h6>
+                                                <h3 class="text-warning">$${pagosData.total_mes}</h3>
+                                                <small>${pagosData.cantidad_pagos_mes} pagos</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Resumen de Turnos</h6>
+                                            <div class="alert alert-info">
+                                                <strong>Atendidos:</strong> ${turnosData.turnos_atendidos} (${turnosData.porcentaje_atencion}%)<br>
+                                                <strong>Ausentes:</strong> ${turnosData.turnos_ausentes} (${turnosData.porcentaje_ausencias}%)<br>
+                                                <strong>Pendientes:</strong> ${turnosData.turnos_pendientes}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Indicadores Clave</h6>
+                                            <div class="alert alert-success">
+                                                <strong>Edad promedio pacientes:</strong> ${pacientesData.estadisticas_edad.promedio} años<br>
+                                                <strong>Pacientes activos:</strong> ${pacientesData.total_pacientes - pacientesData.pacientes_sin_turnos}<br>
+                                                <strong>Eficiencia de agenda:</strong> ${ocupacionData.ocupacion_promedio}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <h6>Top Médicos por Atención</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Médico</th>
+                                                            <th>Turnos Totales</th>
+                                                            <th>Atendidos</th>
+                                                            <th>% Eficiencia</th>
+                                                            <th>Ocupación</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${Object.entries(turnosData.stats_por_medico).map(([medico, stats]) => {
+                                                            const eficiencia = stats.total > 0 ? Math.round((stats.atendidos / stats.total) * 100) : 0;
+                                                            const ocupacion = ocupacionData.ocupacion_por_medico[medico]?.porcentaje_ocupacion || 0;
+                                                            return `
+                                                                <tr>
+                                                                    <td>${medico}</td>
+                                                                    <td>${stats.total}</td>
+                                                                    <td class="text-success">${stats.atendidos}</td>
+                                                                    <td><span class="badge ${eficiencia > 85 ? 'bg-success' : eficiencia > 70 ? 'bg-warning' : 'bg-secondary'}">${eficiencia}%</span></td>
+                                                                    <td><span class="badge ${ocupacion > 80 ? 'bg-success' : ocupacion > 50 ? 'bg-warning' : 'bg-secondary'}">${ocupacion}%</span></td>
+                                                                </tr>
+                                                            `;
+                                                        }).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                    <button type="button" class="btn btn-primary" onclick="exportarReporte('dashboard', '', '')">Exportar PDF</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                const existingModal = document.getElementById('dashboardEjecutivoModal');
+                if (existingModal) existingModal.remove();
+
+                document.body.insertAdjacentHTML('beforeend', modalContent);
+                const modal = new bootstrap.Modal(document.getElementById('dashboardEjecutivoModal'));
+                modal.show();
+
+            } catch (error) {
+                alert('Error al generar dashboard ejecutivo: ' + error.message);
+            }
+        }
+
+        // Función para generar reporte personalizado
+        async function generarReportePersonalizado() {
+            const fechaInicio = document.getElementById('fecha-inicio-custom').value;
+            const fechaFin = document.getElementById('fecha-fin-custom').value;
+            const medico = document.getElementById('medico-filtro').value;
+            const tipo = document.getElementById('tipo-reporte').value;
+
+            if (!fechaInicio || !fechaFin) {
+                alert('Por favor seleccione las fechas de inicio y fin');
+                return;
+            }
+
+            if (fechaInicio > fechaFin) {
+                alert('La fecha de inicio no puede ser mayor que la fecha de fin');
+                return;
+            }
+
+            try {
+                let url = '';
+                switch (tipo) {
+                    case 'turnos':
+                        url = `/api/reportes/turnos?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                        if (medico) url += `&medico=${encodeURIComponent(medico)}`;
+                        await mostrarReporteTurnos(fechaInicio, fechaFin, `Reporte Personalizado de Turnos`);
+                        break;
+                    case 'ocupacion':
+                        await mostrarReporteOcupacionPersonalizado(fechaInicio, fechaFin);
+                        break;
+                    case 'pacientes':
+                        await mostrarReportePacientes();
+                        break;
+                    default:
+                        alert('Tipo de reporte no válido');
+                        return;
+                }
+            } catch (error) {
+                alert('Error al generar reporte personalizado: ' + error.message);
+            }
+        }
+
+        async function mostrarReporteOcupacionPersonalizado(fechaInicio, fechaFin) {
+            try {
+                const response = await fetch(`/api/reportes/ocupacion?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error al obtener el reporte');
+                }
+
+                // Usar la misma función pero con título personalizado
+                const modalContent = document.getElementById('reporteOcupacionModal')?.innerHTML || '';
+                await mostrarReporteOcupacion(); // Reutilizar la función existente
+                
+                // Cambiar el título
+                const modal = document.getElementById('reporteOcupacionModal');
+                if (modal) {
+                    const title = modal.querySelector('.modal-title');
+                    if (title) {
+                        title.textContent = `Reporte de Ocupación Personalizado (${fechaInicio} - ${fechaFin})`;
+                    }
+                }
+
+            } catch (error) {
+                alert('Error al generar reporte de ocupación personalizado: ' + error.message);
+            }
         }
     </script>
 </body>
