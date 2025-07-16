@@ -18,39 +18,15 @@ timezone_ar = pytz.timezone('America/Argentina/Buenos_Aires')
 
 
 
-# Rutas de archivo usando el disco persistente
-DATA_FILE = "/data/historias_clinicas.json"
-USUARIOS_FILE = "/data/usuarios.json"
-PACIENTES_FILE = "/data/pacientes.json"
-TURNOS_FILE = "/data/turnos.json"
-AGENDA_FILE = "/data/agenda.json"
-PAGOS_FILE = "/data/pagos.json"
+# Rutas de archivo locales
+DATA_FILE = "historias_clinicas.json"
+USUARIOS_FILE = "usuarios.json"
+PACIENTES_FILE = "pacientes.json"
+TURNOS_FILE = "turnos.json"
+AGENDA_FILE = "agenda.json"
+PAGOS_FILE = "pagos.json"
 
-# (OPCIONAL) Copiar archivos antiguos si todavía existen en la raíz
-def mover_a_persistencia(nombre_archivo):
-    origen = nombre_archivo
-    destino = f"/data/{nombre_archivo}"
-    
-    if os.path.exists(origen) and not os.path.exists(destino):
-        try:
-            shutil.copy(origen, destino)
-            print(f"✅ Archivo '{nombre_archivo}' copiado a /data")
-        except Exception as e:
-            print(f"❌ Error al copiar '{nombre_archivo}':", e)
-    else:
-        print(f"🔁 '{nombre_archivo}' ya existe en /data o no se encontró en el origen.")
-
-archivos_para_mover = [
-    "historias_clinicas.json",
-    "usuarios.json",
-    "pacientes.json",
-    "turnos.json",
-    "agenda.json",
-    "pagos.json"
-]
-
-for archivo in archivos_para_mover:
-    mover_a_persistencia(archivo)
+# Usando archivos locales, no necesitamos mover nada
 
 
 
@@ -194,11 +170,12 @@ def inicio():
 
 
 @app.route("/api/session-info")
-@login_requerido
 def session_info():
     return jsonify({
+        "authenticated": "usuario" in session,
         "usuario": session.get("usuario"),
-        "rol": session.get("rol")
+        "rol": session.get("rol"),
+        "message": "Información de sesión obtenida correctamente"
     })
 
 
@@ -1329,6 +1306,8 @@ def obtener_estadisticas_pagos_admin():
 def test_reportes():
     """Función de prueba para verificar autenticación"""
     return jsonify({"message": "Reportes funcionando correctamente", "user": session.get("usuario"), "rol": session.get("rol")})
+
+
 
 @app.route("/api/reportes/turnos", methods=["GET"])
 @login_requerido
