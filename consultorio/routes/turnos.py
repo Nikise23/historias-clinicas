@@ -21,6 +21,7 @@ from consultorio.storage.queries import (
     load_turnos_fecha,
     load_turnos_medico_fecha,
     load_turnos_medico_proximos,
+    buscar_turnos_proximos,
     obtener_paciente,
     pago_existe,
     update_turno,
@@ -45,6 +46,35 @@ def obtener_turnos():
     turnos_raw = cargar_json(TURNOS_FILE)
     pagos = cargar_json(PAGOS_FILE)
     return jsonify(enriquecer_turnos(turnos_raw, pacientes, pagos))
+
+
+@bp.route("/api/turnos/buscar", methods=["GET"], endpoint="buscar_turnos")
+@login_requerido
+@rol_permitido(["secretaria", "medico", "administrador"])
+def buscar_turnos():
+    """Busca turnos de hoy/futuros por DNI o apellido sin cargar toda la tabla."""
+    q = (request.args.get("q") or request.args.get("busqueda") or "").strip()
+    if len(q) < 2:
+        return jsonify({"turnos": [], "error": "Ingresá al menos 2 caracteres"}), 400
+    try:
+        limit = int(request.args.get("limit", 20))
+    except (TypeError, ValueError):
+        limit = 20
+
+    desde = hoy_ar_iso()
+    turnos_raw = buscar_turnos_proximos(q, desde, limit=limit)
+    dnis = {t.get("dni_paciente") for t in turnos_raw if t.get("dni_paciente")}
+    pacientes = load_pacientes_por_dnis(dnis)
+    # Pagos solo de las fechas involucradas (evita cargar pagos históricos enteros)
+    fechas = {
+        (normalizar_fecha_dia(t.get("fecha")) or str(t.get("fecha") or "").strip()[:10])
+        for t in turnos_raw
+        if t.get("fecha")
+    }
+    pagos = []
+    for fecha in fechas:
+        pagos.extend(load_pagos_fecha(fecha))
+    return jsonify({"turnos": enriquecer_turnos(turnos_raw, pacientes, pagos)})
 
 
 

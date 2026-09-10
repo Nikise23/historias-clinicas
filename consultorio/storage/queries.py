@@ -163,6 +163,42 @@ def load_turnos_medico_proximos(medico: str, fecha_desde: str, limit: int = 50) 
     return turnos[:limit]
 
 
+def buscar_turnos_proximos(busqueda: str, fecha_desde: str, limit: int = 20) -> list:
+    if use_database():
+        from consultorio.storage import db_storage
+
+        return db_storage.buscar_turnos_proximos(busqueda, fecha_desde, limit)
+
+    q = (busqueda or "").strip().lower()
+    if len(q) < 2:
+        return []
+    f = normalizar_fecha_dia(fecha_desde) or str(fecha_desde).strip()[:10]
+    limit = max(1, min(int(limit or 20), 50))
+
+    pacientes = {
+        p.get("dni"): p
+        for p in cargar_json(PACIENTES_FILE)
+        if p.get("dni")
+    }
+    resultado = []
+    for t in cargar_json(TURNOS_FILE):
+        tf = normalizar_fecha_dia(t.get("fecha")) or str(t.get("fecha") or "").strip()[:10]
+        if tf < f:
+            continue
+        dni = str(t.get("dni_paciente") or "")
+        p = pacientes.get(dni) or {}
+        apellido = str(p.get("apellido") or "").lower()
+        nombre = str(p.get("nombre") or "").lower()
+        if q.isdigit():
+            if q not in dni:
+                continue
+        elif q not in apellido and q not in nombre and q not in dni.lower():
+            continue
+        resultado.append(t)
+    resultado.sort(key=lambda t: (t.get("fecha", ""), t.get("hora", "")))
+    return resultado[:limit]
+
+
 def load_pagos_fecha(fecha: str) -> list:
     if use_database():
         from consultorio.storage import db_storage

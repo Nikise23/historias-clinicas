@@ -502,6 +502,39 @@ def load_turnos_medico_proximos(medico: str, fecha_desde: str, limit: int = 50) 
     return [t.to_dict() for t in rows]
 
 
+def buscar_turnos_proximos(busqueda: str, fecha_desde: str, limit: int = 20) -> list:
+    """Turnos desde fecha_desde filtrados por DNI o apellido (sin cargar tablas enteras)."""
+    q = (busqueda or "").strip()
+    if len(q) < 2:
+        return []
+    f = normalizar_fecha_dia(fecha_desde) or str(fecha_desde).strip()[:10]
+    limit = max(1, min(int(limit or 20), 50))
+
+    query = Turno.query.filter(func.substr(Turno.fecha, 1, 10) >= f)
+    if q.isdigit():
+        query = query.filter(Turno.dni_paciente.contains(q))
+    else:
+        like = f"%{q}%"
+        dnis = [
+            p.dni
+            for p in Paciente.query.filter(
+                db.or_(
+                    Paciente.apellido.ilike(like),
+                    Paciente.nombre.ilike(like),
+                )
+            )
+            .limit(200)
+            .all()
+            if p.dni
+        ]
+        if not dnis:
+            return []
+        query = query.filter(Turno.dni_paciente.in_(dnis))
+
+    rows = query.order_by(Turno.fecha, Turno.hora).limit(limit).all()
+    return [t.to_dict() for t in rows]
+
+
 def load_pagos_fecha(fecha: str) -> list:
     f = normalizar_fecha_dia(fecha) or str(fecha).strip()[:10]
     rows = (

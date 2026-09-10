@@ -855,11 +855,11 @@
     }
 
     async function buscarTurnos() {
-      const filtro = document.getElementById("buscar-turnos").value.trim().toLowerCase();
+      const filtro = document.getElementById("buscar-turnos").value.trim();
       const lista = document.getElementById("lista-turnos");
       lista.innerHTML = "";
 
-      if (!filtro) {
+      if (filtro.length < 2) {
         lista.innerHTML = `
           <div class="text-center py-5">
             <i class="bi bi-calendar-search text-muted" style="font-size: 3rem;"></i>
@@ -871,45 +871,22 @@
       }
 
       try {
-        // Obtener todos los turnos
-        const response = await fetch("/api/turnos");
-        const turnos = await response.json();
-        
-        // Obtener todos los pacientes para hacer el match
-        const responsePacientes = await fetch("/api/pacientes");
-        const pacientes = await responsePacientes.json();
-        
-        // Crear un mapa de DNI a paciente
-        const pacientesMap = {};
-        pacientes.forEach(p => {
-          pacientesMap[p.dni] = p;
-        });
-
-        // Parsear/fomar fecha YYYY-MM-DD sin problemas de zona horaria
-        function parseFechaLocal(fechaStr) {
-          const [y, m, d] = fechaStr.split('-').map(Number);
-          return new Date(y, m - 1, d);
+        const response = await fetch(
+          `/api/turnos/buscar?q=${encodeURIComponent(filtro)}&limit=20`,
+          { cache: "no-store" }
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || `Error HTTP ${response.status}`);
         }
+
+        const turnosFiltrados = Array.isArray(data.turnos) ? data.turnos : [];
+
         function formatearFechaDDMM(fechaStr) {
-          const [y, m, d] = fechaStr.split('-');
-          return `${parseInt(d)}/${parseInt(m)}/${y}`;
+          const [y, m, d] = String(fechaStr || "").split("-");
+          if (!y || !m || !d) return fechaStr || "";
+          return `${parseInt(d, 10)}/${parseInt(m, 10)}/${y}`;
         }
-
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-
-        const turnosFiltrados = turnos.filter(turno => {
-          const paciente = pacientesMap[turno.dni_paciente];
-          if (!paciente) return false;
-          
-          const coincideFiltro = turno.dni_paciente.includes(filtro) || 
-                                paciente.apellido.toLowerCase().includes(filtro);
-          
-          if (!coincideFiltro) return false;
-          
-          const fechaTurno = parseFechaLocal(turno.fecha);
-          return fechaTurno >= hoy;
-        }).slice(0, 10);
 
         if (turnosFiltrados.length === 0) {
           lista.innerHTML = `
@@ -925,29 +902,29 @@
         const h = new Date();
         const hoyStr = `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,'0')}-${String(h.getDate()).padStart(2,'0')}`;
 
-        // Mostrar los turnos encontrados (usar fecha_fmt del servidor para evitar desfase por zona horaria)
         turnosFiltrados.forEach(turno => {
-          const paciente = pacientesMap[turno.dni_paciente];
+          const paciente = turno.paciente || { dni: turno.dni_paciente, nombre: "", apellido: "" };
           const esHoy = turno.fecha === hoyStr;
           const fechaMostrar = turno.fecha_fmt || formatearFechaDDMM(turno.fecha);
-          
+          const nombreMostrar = `${paciente.nombre || ""} ${paciente.apellido || ""}`.trim() || `DNI ${turno.dni_paciente}`;
+
           const div = document.createElement("div");
           div.className = "patient-card";
           div.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
               <div class="flex-grow-1">
                 <h6 class="fw-bold mb-1 text-primary">
-                  <i class="bi bi-person-circle me-2"></i>${paciente.nombre} ${paciente.apellido}
+                  <i class="bi bi-person-circle me-2"></i>${escapeHtmlTurnos(nombreMostrar)}
                 </h6>
                 <small class="text-muted">
-                  <i class="bi bi-person-badge me-1"></i>DNI: ${paciente.dni} | 
-                  <i class="bi bi-calendar3 me-1"></i>${esHoy ? 'Hoy' : fechaMostrar} | 
-                  <i class="bi bi-clock me-1"></i>${turno.hora}
+                  <i class="bi bi-person-badge me-1"></i>DNI: ${escapeHtmlTurnos(paciente.dni || turno.dni_paciente)} | 
+                  <i class="bi bi-calendar3 me-1"></i>${esHoy ? 'Hoy' : escapeHtmlTurnos(fechaMostrar)} | 
+                  <i class="bi bi-clock me-1"></i>${escapeHtmlTurnos(turno.hora || "")}
                 </small>
                 <br>
                 <small class="text-muted">
-                  <i class="bi bi-person-heart me-1"></i>Dr. ${turno.medico} | 
-                  <i class="bi bi-shield-check me-1"></i>${turno.estado}
+                  <i class="bi bi-person-heart me-1"></i>Dr. ${escapeHtmlTurnos(turno.medico || "")} | 
+                  <i class="bi bi-shield-check me-1"></i>${escapeHtmlTurnos(turno.estado || "")}
                 </small>
                 ${turno.observacion ? `<div class="small text-muted obs-sombra-pac obs-sombra-pac-turno"><i class="bi bi-chat-left-text me-1 text-primary"></i>Obs. turno: <span class="fw-semibold text-dark">${escapeHtmlTurnos(turno.observacion)}</span></div>` : ''}
                 ${turno.observacion_pago ? `<div class="small text-muted obs-sombra-pac obs-sombra-pac-pago"><i class="bi bi-cash-coin me-1 text-success"></i>Obs. pago: <span class="fw-semibold text-dark">${escapeHtmlTurnos(turno.observacion_pago)}</span></div>` : ''}
@@ -962,17 +939,17 @@
                   </button>
                   <ul class="dropdown-menu">
                     <li>
-                      <a class="dropdown-item" href="#" onclick='editarTurno(${JSON.stringify(turno).replace(/"/g, '&quot;')})'>
+                      <a class="dropdown-item" href="#" onclick='editarTurno(${JSON.stringify(turno).replace(/'/g, "&#39;").replace(/"/g, "&quot;")})'>
                         <i class="bi bi-pencil me-2"></i>Editar Turno
                       </a>
                     </li>
                     <li>
-                      <a class="dropdown-item" href="#" onclick='cancelarTurno(${JSON.stringify(turno).replace(/"/g, '&quot;')})'>
+                      <a class="dropdown-item" href="#" onclick='cancelarTurno(${JSON.stringify(turno).replace(/'/g, "&#39;").replace(/"/g, "&quot;")})'>
                         <i class="bi bi-x-circle me-2 text-danger"></i>Cancelar Turno
                       </a>
                     </li>
                     <li>
-                      <a class="dropdown-item" href="#" onclick='marcarAtendido(${JSON.stringify(turno).replace(/"/g, '&quot;')})'>
+                      <a class="dropdown-item" href="#" onclick='marcarAtendido(${JSON.stringify(turno).replace(/'/g, "&#39;").replace(/"/g, "&quot;")})'>
                         <i class="bi bi-check-circle me-2 text-success"></i>Marcar Atendido
                       </a>
                     </li>
